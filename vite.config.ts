@@ -15,6 +15,15 @@ export default defineConfig({
             proxyReq.setHeader('Content-Type', 'application/json');
             proxyReq.setHeader('Accept', 'application/json');
           });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            // Handle cookies properly
+            const setCookie = proxyRes.headers['set-cookie'];
+            if (setCookie) {
+              proxyRes.headers['set-cookie'] = setCookie.map(cookie => 
+                cookie.replace(/; secure/gi, '').replace(/; samesite=none/gi, '')
+              );
+            }
+          });
         }
       }
     }
