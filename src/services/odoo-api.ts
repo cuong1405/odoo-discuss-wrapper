@@ -4,12 +4,15 @@ import { secureStorage } from '../utils/crypto';
 
 class OdooAPI {
   private client: AxiosInstance | null = null;
-  private serverUrl: string | null = null;
+  private serverUrl: string = '';
+  private originalServerUrl: string = '';
   private database: string | null = null;
 
   async authenticate(credentials: AuthCredentials): Promise<{ token: string; user: User }> {
     try {
-      this.serverUrl = credentials.serverUrl.replace(/\/$/, '');
+      this.originalServerUrl = credentials.serverUrl.replace(/\/$/, '');
+      // Use proxy in development, direct URL in production
+      this.serverUrl = import.meta.env.DEV ? '/api' : this.originalServerUrl;
       this.database = credentials.database;
 
       // Create temporary client for authentication
@@ -18,9 +21,20 @@ class OdooAPI {
         timeout: 10000,
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         }
       });
 
+      // Add request interceptor to handle CORS in production
+      authClient.interceptors.request.use((config) => {
+        // In production, we might need to handle CORS differently
+        if (!import.meta.env.DEV) {
+          config.headers['Access-Control-Allow-Origin'] = '*';
+          config.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+          config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie';
+        }
+        return config;
+      });
       // Authenticate with Odoo
       const response = await authClient.post('/web/session/authenticate', {
         jsonrpc: '2.0',
@@ -44,7 +58,7 @@ class OdooAPI {
       // Store authentication data
       const token = sessionInfo.session_id;
       secureStorage.setItem('auth_token', token);
-      secureStorage.setItem('server_url', this.serverUrl);
+      secureStorage.setItem('server_url', this.originalServerUrl);
       secureStorage.setItem('database', this.database);
 
       // Initialize authenticated client
@@ -65,11 +79,20 @@ class OdooAPI {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
+        
+        // Handle CORS errors
+        if (axiosError.message.includes('CORS') || axiosError.message.includes('Access-Control-Allow-Origin')) {
+          throw new Error('CORS error: The server does not allow requests from this domain. Please contact your system administrator to configure CORS settings.');
+        }
+        
         if (axiosError.code === 'ECONNREFUSED' || axiosError.code === 'ENOTFOUND') {
           throw new Error('Server unreachable. Please check the URL.');
         }
         if (axiosError.response?.status === 404) {
           throw new Error('Database not found. Please check the database name.');
+        }
+        if (axiosError.response?.status === 0) {
+          throw new Error('Network error: Unable to connect to the server. This might be a CORS issue.');
         }
       }
       throw error;
@@ -82,8 +105,21 @@ class OdooAPI {
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Cookie': `session_id=${token}`
+      },
+      withCredentials: import.meta.env.DEV ? false : true
+    });
+
+    // Add request interceptor for CORS handling
+    this.client.interceptors.request.use((config) => {
+      // In production, we might need to handle CORS differently
+      if (!import.meta.env.DEV) {
+        config.headers['Access-Control-Allow-Origin'] = '*';
+        config.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+        config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie';
       }
+      return config;
     });
 
     // Add response interceptor for token refresh
@@ -104,14 +140,15 @@ class OdooAPI {
 
   async restoreSession(): Promise<{ token: string; user: User } | null> {
     const token = secureStorage.getItem('auth_token');
-    const serverUrl = secureStorage.getItem('server_url');
+    const originalServerUrl = secureStorage.getItem('server_url');
     const database = secureStorage.getItem('database');
 
-    if (!token || !serverUrl || !database) {
+    if (!token || !originalServerUrl || !database) {
       return null;
     }
 
-    this.serverUrl = serverUrl;
+    this.originalServerUrl = originalServerUrl;
+    this.serverUrl = import.meta.env.DEV ? '/api' : this.originalServerUrl;
     this.database = database;
     this.initializeClient(token);
 
