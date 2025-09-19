@@ -149,16 +149,13 @@ class OdooAPI {
     this.initializeClient(token);
 
     try {
-      // For now, return a basic user object
-      // In a real implementation, you'd validate the session with Odoo
+      // Validate the session by fetching current user data
+      const user = await this.getCurrentUser();
       return { 
         token, 
-        user: {
-          id: 1,
-          name: 'User',
-          email: 'user@example.com',
-          isOnline: true
-        }
+        user,
+        serverUrl: this.originalServerUrl,
+        database: this.database
       };
     } catch {
       // Session expired
