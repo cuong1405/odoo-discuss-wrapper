@@ -11,9 +11,20 @@ class OdooAPI {
   async authenticate(credentials: AuthCredentials): Promise<{ token: string; user: User }> {
     try {
       this.originalServerUrl = credentials.serverUrl.replace(/\/$/, '');
-      // Use proxy in development, direct URL in production
-      this.serverUrl = import.meta.env.DEV ? '/api' : this.originalServerUrl;
       this.database = credentials.database;
+			
+			// ***Use proxy in development, direct URL in production***
+      const isLocalhost = window.location.hostname === 'localhost';
+	    if (isLocalhost) {
+	      // Use Vite proxy when running on localhost
+	      this.serverUrl = '/api';
+	    } else {
+	      // Use a CORS proxy as a workaround for online IDEs like StackBlitz
+	      const corsProxy = 'https://cors-anywhere.herokuapp.com/'; // A popular but rate-limited option
+	      this.serverUrl = `${corsProxy}${this.originalServerUrl}`;
+	    }
+	    
+	    console.log('Final request base URL:', this.serverUrl);
 
       // Create temporary client for authentication
       const authClient = axios.create({
