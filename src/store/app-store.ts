@@ -2,37 +2,33 @@ import { create } from 'zustand';
 import { AppState, User, Channel, Message, NavigationTab } from '../types';
 import { odooAPI } from '../services/odoo-api';
 import { dbOperations } from '../db';
-import { notificationService } from '../services/notification-service';
-import { webSocketService } from '../services/websocket-service';
 
 interface AppStore extends AppState {
   currentTab: NavigationTab;
   setCurrentTab: (tab: NavigationTab) => void;
   setCurrentChannel: (channelId: number | null) => void;
-  setRealTimeConnected: (isConnected: boolean) => void;
   loadUsers: () => Promise<void>;
   loadChannels: () => Promise<void>;
   loadMessages: (channelId: number) => Promise<void>;
+  loadRecentMessages: () => Promise<void>;
   sendMessage: (channelId: number, content: string) => Promise<void>;
   toggleStarMessage: (messageId: number) => Promise<void>;
   setOfflineStatus: (isOffline: boolean) => void;
   getUnreadCount: () => number;
   getStarredMessages: () => Message[];
-  loadRecentMessages: () => Promise<void>;
-  initializeRealTime: (serverUrl: string, token: string) => Promise<void>;
-  requestNotificationPermission: () => Promise<boolean>;
+  recentMessages: Message[];
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
   users: {},
   channels: {},
   messages: {},
+  recentMessages: [],
   currentChannelId: null,
   currentTab: 'inbox',
   isLoading: false,
   error: null,
   isOffline: false,
-  isRealTimeConnected: false,
 
   setCurrentTab: (tab: NavigationTab) => {
     set({ currentTab: tab });
@@ -43,10 +39,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (channelId) {
       get().loadMessages(channelId);
     }
-  },
-
-  setRealTimeConnected: (isConnected: boolean) => {
-    set({ isRealTimeConnected: isConnected });
   },
 
   loadUsers: async () => {
@@ -152,6 +144,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  loadRecentMessages: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      // Try to load from cache first
+      const cachedMessages = await dbOperations.getRecentMessages(20);
+      if (cachedMessages.length > 0) {
+        set({ recentMessages: cachedMessages });
+      }
+
+      // Then fetch fresh data from Odoo API
+      const recentMessages = await odooAPI.getRecentMessages(20, 0);
+      
+      // Save to cache
+      await dbOperations.saveMessages(recentMessages);
+      
+      set({ recentMessages, isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to load recent messages',
+        isLoading: false 
+      });
+    }
+  },
+
   sendMessage: async (channelId: number, content: string) => {
     try {
       const state = get();
@@ -208,116 +225,5 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
     
     return allMessages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  },
-
-  loadRecentMessages: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      
-      const recentMessages = await odooAPI.getRecentMessages(50);
-      
-      // Group messages by channel
-      const messagesByChannel: Record<number, Message[]> = {};
-      recentMessages.forEach(message => {
-        if (!messagesByChannel[message.channelId]) {
-          messagesByChannel[message.channelId] = [];
-        }
-        messagesByChannel[message.channelId].push(message);
-      });
-
-      // Save to cache
-      await dbOperations.saveMessages(recentMessages);
-      
-      set({ 
-        messages: messagesByChannel,
-        isLoading: false 
-      });
-    } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to load recent messages',
-        isLoading: false 
-      });
-    }
-  },
-
-  initializeRealTime: async (serverUrl: string, token: string) => {
-    try {
-      // Connect to WebSocket
-      webSocketService.connect(serverUrl, token);
-
-      // Set up event listeners for real-time updates
-      const handleNewMessage = (event: CustomEvent) => {
-        const { message, author, channel } = event.detail;
-        const state = get();
-        
-        const currentMessages = state.messages[message.channelId] || [];
-        const updatedMessages = [message, ...currentMessages];
-        
-        set({
-          messages: {
-            ...state.messages,
-            [message.channelId]: updatedMessages
-          }
-        });
-
-        // Update channel unread count if not currently viewing
-        if (state.currentChannelId !== message.channelId) {
-          const channel = state.channels[message.channelId];
-          if (channel) {
-            set({
-              channels: {
-                ...state.channels,
-                [message.channelId]: {
-                  ...channel,
-                  unreadCount: channel.unreadCount + 1
-                }
-              }
-            });
-          }
-        }
-      };
-
-      const handleUserStatusChange = (event: CustomEvent) => {
-        const { userId, isOnline } = event.detail;
-        const state = get();
-        const user = state.users[userId];
-        
-        if (user) {
-          set({
-            users: {
-              ...state.users,
-              [userId]: {
-                ...user,
-                isOnline
-              }
-            }
-          });
-        }
-      };
-
-      window.addEventListener('newMessage', handleNewMessage as EventListener);
-      window.addEventListener('userStatusChanged', handleUserStatusChange as EventListener);
-
-      const handleWebSocketStatus = (event: CustomEvent) => {
-        const { isConnected } = event.detail;
-        get().setRealTimeConnected(isConnected);
-      };
-
-      window.addEventListener('websocketConnectionStatus', handleWebSocketStatus as EventListener);
-
-      // Clean up listeners when store is destroyed
-      return () => {
-        window.removeEventListener('newMessage', handleNewMessage as EventListener);
-        window.removeEventListener('userStatusChanged', handleUserStatusChange as EventListener);
-        window.removeEventListener('websocketConnectionStatus', handleWebSocketStatus as EventListener);
-        webSocketService.disconnect();
-      };
-    } catch (error) {
-      console.error('Failed to initialize real-time features:', error);
-    }
-  },
-
-  requestNotificationPermission: async () => {
-    return await notificationService.requestPermission();
   }
 }));

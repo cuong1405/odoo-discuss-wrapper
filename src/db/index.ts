@@ -68,6 +68,14 @@ export const dbOperations = {
     await db.channels.update(channelId, { unreadCount: count });
   },
 
+  async getRecentMessages(limit = 20): Promise<Message[]> {
+    return await db.messages
+      .orderBy('createdAt')
+      .reverse()
+      .limit(limit)
+      .toArray();
+  },
+
   // Clear all data
   async clearAll(): Promise<void> {
     await Promise.all([
