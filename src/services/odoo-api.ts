@@ -9,6 +9,7 @@ class OdooAPI {
   private database: string | null = null;
 
   async authenticate(credentials: AuthCredentials): Promise<{ token: string; user: User }> {
+    console.log('Value of import.meta.env.DEV:', import.meta.env.DEV);
     try {
       this.originalServerUrl = credentials.serverUrl.replace(/\/$/, '');
       // Use proxy in development, direct URL in production
