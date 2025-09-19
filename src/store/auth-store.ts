@@ -51,27 +51,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isAuthenticated: true,
           user: session.user,
           token: session.token,
-          serverUrl: session.serverUrl,
-          database: session.database
-        });
-      } else {
-        set({
-          isAuthenticated: false,
-          user: null,
-          token: null,
-          serverUrl: null,
-          database: null
+          serverUrl: null, // Will be set by API
+          database: null   // Will be set by API
         });
       }
     } catch (error) {
       console.error('Failed to restore session:', error);
-      set({
-        isAuthenticated: false,
-        user: null,
-        token: null,
-        serverUrl: null,
-        database: null
-      });
     }
   },
 

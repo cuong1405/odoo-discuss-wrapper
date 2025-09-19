@@ -149,13 +149,16 @@ class OdooAPI {
     this.initializeClient(token);
 
     try {
-      // Validate the session by fetching current user data
-      const user = await this.getCurrentUser();
+      // For now, return a basic user object
+      // In a real implementation, you'd validate the session with Odoo
       return { 
         token, 
-        user,
-        serverUrl: this.originalServerUrl,
-        database: this.database
+        user: {
+          id: 1,
+          name: 'User',
+          email: 'user@example.com',
+          isOnline: true
+        }
       };
     } catch {
       // Session expired
@@ -264,97 +267,29 @@ class OdooAPI {
   async getMessages(channelId: number, limit = 100): Promise<Message[]> {
     if (!this.client) throw new Error('Not authenticated');
 
-    try {
-      const response = await this.client.post('/web/dataset/call_kw', {
-        jsonrpc: '2.0',
-        method: 'call',
-        params: {
-          model: 'mail.message',
-          method: 'search_read',
-          args: [[
-            ['res_id', '=', channelId], 
-            ['model', '=', 'mail.channel'],
-            ['message_type', 'in', ['comment', 'notification']]
-          ]],
-          kwargs: {
-            fields: ['id', 'body', 'author_id', 'date', 'starred_partner_ids', 'attachment_ids', 'parent_id'],
-            limit,
-            order: 'date desc'
-          }
+    const response = await this.client.post('/web/dataset/call_kw', {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'mail.message',
+        method: 'search_read',
+        args: [[['res_id', '=', channelId], ['model', '=', 'mail.channel']]],
+        kwargs: {
+          fields: ['id', 'body', 'author_id', 'date', 'starred_partner_ids'],
+          limit,
+          order: 'date desc'
         }
-      });
-
-      if (response.data.error) {
-        throw new Error(response.data.error.data?.message || 'Failed to fetch messages');
       }
+    });
 
-      return response.data.result.map((msg: any) => ({
-        id: msg.id,
-        content: this.stripHtmlTags(msg.body || ''),
-        authorId: msg.author_id ? msg.author_id[0] : 0,
-        channelId,
-        createdAt: new Date(msg.date),
-        isStarred: msg.starred_partner_ids && msg.starred_partner_ids.length > 0,
-        parentId: msg.parent_id ? msg.parent_id[0] : undefined,
-        attachments: msg.attachment_ids ? msg.attachment_ids.map((id: number) => ({ id })) : []
-      }));
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      return [];
-    }
-  }
-
-  private stripHtmlTags(html: string): string {
-    // Remove HTML tags and decode entities
-    return html
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .trim();
-  }
-
-  async getRecentMessages(limit = 50): Promise<Message[]> {
-    if (!this.client) throw new Error('Not authenticated');
-
-    try {
-      const response = await this.client.post('/web/dataset/call_kw', {
-        jsonrpc: '2.0',
-        method: 'call',
-        params: {
-          model: 'mail.message',
-          method: 'search_read',
-          args: [[
-            ['model', '=', 'mail.channel'],
-            ['message_type', 'in', ['comment', 'notification']],
-            ['date', '>=', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()] // Last 24 hours
-          ]],
-          kwargs: {
-            fields: ['id', 'body', 'author_id', 'date', 'starred_partner_ids', 'res_id', 'subject'],
-            limit,
-            order: 'date desc'
-          }
-        }
-      });
-
-      if (response.data.error) {
-        throw new Error(response.data.error.data?.message || 'Failed to fetch recent messages');
-      }
-
-      return response.data.result.map((msg: any) => ({
-        id: msg.id,
-        content: this.stripHtmlTags(msg.body || msg.subject || ''),
-        authorId: msg.author_id ? msg.author_id[0] : 0,
-        channelId: msg.res_id || 0,
-        createdAt: new Date(msg.date),
-        isStarred: msg.starred_partner_ids && msg.starred_partner_ids.length > 0
-      }));
-    } catch (error) {
-      console.error('Error fetching recent messages:', error);
-      return [];
-    }
+    return response.data.result.map((msg: any) => ({
+      id: msg.id,
+      content: msg.body || '',
+      authorId: msg.author_id[0],
+      channelId,
+      createdAt: new Date(msg.date),
+      isStarred: msg.starred_partner_ids.length > 0
+    }));
   }
 
   async sendMessage(channelId: number, content: string): Promise<Message> {
