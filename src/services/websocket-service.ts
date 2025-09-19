@@ -28,7 +28,6 @@ export class WebSocketService {
       auth: {
         token
       },
-      path: '/socket.io/',
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true
@@ -44,26 +43,17 @@ export class WebSocketService {
       console.log('WebSocket connected');
       this.isConnected = true;
       this.reconnectAttempts = 0;
-      window.dispatchEvent(new CustomEvent('websocketConnectionStatus', {
-        detail: { isConnected: true }
-      }));
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('WebSocket disconnected:', reason);
       this.isConnected = false;
-      window.dispatchEvent(new CustomEvent('websocketConnectionStatus', {
-        detail: { isConnected: false }
-      }));
       this.handleReconnect();
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error);
       this.isConnected = false;
-      window.dispatchEvent(new CustomEvent('websocketConnectionStatus', {
-        detail: { isConnected: false }
-      }));
       this.handleReconnect();
     });
 
