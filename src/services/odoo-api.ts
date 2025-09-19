@@ -51,12 +51,12 @@ class OdooAPI {
       }
 
       const sessionInfo = response.data.result;
-      if (!sessionInfo || !sessionInfo.uid) {
+      if (!sessionInfo || !sessionInfo.uid || !sessionInfo.session_id) {
         throw new Error('Invalid credentials');
       }
 
       // Store authentication data
-      const token = sessionInfo.session_id || 'authenticated';
+      const token = sessionInfo.session_id;
       secureStorage.setItem('auth_token', token);
       secureStorage.setItem('server_url', this.originalServerUrl);
       secureStorage.setItem('database', this.database);
@@ -183,6 +183,17 @@ class OdooAPI {
         }
       });
 
+      // Check for session expiration in response
+      if (response.data.error && 
+          (response.data.error.data?.message?.includes('Session expired') ||
+           response.data.error.data?.message?.includes('session_id invalid'))) {
+        secureStorage.removeItem('auth_token');
+        secureStorage.removeItem('server_url');
+        secureStorage.removeItem('database');
+        window.location.reload();
+        throw new Error('Session expired');
+      }
+
       if (response.data.result && response.data.result.length > 0) {
         const userData = response.data.result[0];
         return {
@@ -224,6 +235,17 @@ class OdooAPI {
       }
     });
 
+    // Check for session expiration in response
+    if (response.data.error && 
+        (response.data.error.data?.message?.includes('Session expired') ||
+         response.data.error.data?.message?.includes('session_id invalid'))) {
+      secureStorage.removeItem('auth_token');
+      secureStorage.removeItem('server_url');
+      secureStorage.removeItem('database');
+      window.location.reload();
+      throw new Error('Session expired');
+    }
+
     return response.data.result.map((user: any) => ({
       id: user.id,
       name: user.name,
@@ -249,6 +271,17 @@ class OdooAPI {
         }
       }
     });
+
+    // Check for session expiration in response
+    if (response.data.error && 
+        (response.data.error.data?.message?.includes('Session expired') ||
+         response.data.error.data?.message?.includes('session_id invalid'))) {
+      secureStorage.removeItem('auth_token');
+      secureStorage.removeItem('server_url');
+      secureStorage.removeItem('database');
+      window.location.reload();
+      throw new Error('Session expired');
+    }
 
     return response.data.result.map((channel: any) => ({
       id: channel.id,
@@ -286,6 +319,17 @@ class OdooAPI {
 
       if (response.data.error) {
         throw new Error(response.data.error.data?.message || 'Failed to fetch messages');
+      }
+
+      // Check for session expiration in response
+      if (response.data.error && 
+          (response.data.error.data?.message?.includes('Session expired') ||
+           response.data.error.data?.message?.includes('session_id invalid'))) {
+        secureStorage.removeItem('auth_token');
+        secureStorage.removeItem('server_url');
+        secureStorage.removeItem('database');
+        window.location.reload();
+        throw new Error('Session expired');
       }
 
       return response.data.result.map((msg: any) => ({
@@ -343,6 +387,17 @@ class OdooAPI {
         throw new Error(response.data.error.data?.message || 'Failed to fetch recent messages');
       }
 
+      // Check for session expiration in response
+      if (response.data.error && 
+          (response.data.error.data?.message?.includes('Session expired') ||
+           response.data.error.data?.message?.includes('session_id invalid'))) {
+        secureStorage.removeItem('auth_token');
+        secureStorage.removeItem('server_url');
+        secureStorage.removeItem('database');
+        window.location.reload();
+        throw new Error('Session expired');
+      }
+
       return response.data.result.map((msg: any) => ({
         id: msg.id,
         content: this.stripHtmlTags(msg.body || msg.subject || ''),
@@ -373,6 +428,17 @@ class OdooAPI {
         }
       }
     });
+
+    // Check for session expiration in response
+    if (response.data.error && 
+        (response.data.error.data?.message?.includes('Session expired') ||
+         response.data.error.data?.message?.includes('session_id invalid'))) {
+      secureStorage.removeItem('auth_token');
+      secureStorage.removeItem('server_url');
+      secureStorage.removeItem('database');
+      window.location.reload();
+      throw new Error('Session expired');
+    }
 
     // Return a mock message for now
     return {
