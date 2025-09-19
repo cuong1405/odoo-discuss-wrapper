@@ -9,6 +9,7 @@ interface AppStore extends AppState {
   currentTab: NavigationTab;
   setCurrentTab: (tab: NavigationTab) => void;
   setCurrentChannel: (channelId: number | null) => void;
+  setRealTimeConnected: (isConnected: boolean) => void;
   loadUsers: () => Promise<void>;
   loadChannels: () => Promise<void>;
   loadMessages: (channelId: number) => Promise<void>;
@@ -31,6 +32,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   isLoading: false,
   error: null,
   isOffline: false,
+  isRealTimeConnected: false,
 
   setCurrentTab: (tab: NavigationTab) => {
     set({ currentTab: tab });
@@ -41,6 +43,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (channelId) {
       get().loadMessages(channelId);
     }
+  },
+
+  setRealTimeConnected: (isConnected: boolean) => {
+    set({ isRealTimeConnected: isConnected });
   },
 
   loadUsers: async () => {
@@ -292,10 +298,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
       window.addEventListener('newMessage', handleNewMessage as EventListener);
       window.addEventListener('userStatusChanged', handleUserStatusChange as EventListener);
 
+      const handleWebSocketStatus = (event: CustomEvent) => {
+        const { isConnected } = event.detail;
+        get().setRealTimeConnected(isConnected);
+      };
+
+      window.addEventListener('websocketConnectionStatus', handleWebSocketStatus as EventListener);
+
       // Clean up listeners when store is destroyed
       return () => {
         window.removeEventListener('newMessage', handleNewMessage as EventListener);
         window.removeEventListener('userStatusChanged', handleUserStatusChange as EventListener);
+        window.removeEventListener('websocketConnectionStatus', handleWebSocketStatus as EventListener);
         webSocketService.disconnect();
       };
     } catch (error) {
