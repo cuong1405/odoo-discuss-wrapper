@@ -24,7 +24,10 @@ export class WebSocketService {
       return;
     }
 
-    this.socket = io(serverUrl, {
+    // For development, use the proxy URL
+    const wsUrl = import.meta.env.DEV ? 'ws://localhost:5173' : serverUrl;
+
+    this.socket = io(wsUrl, {
       auth: {
         token
       },
