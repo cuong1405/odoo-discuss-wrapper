@@ -66,7 +66,6 @@ export interface AppState {
   isLoading: boolean;
   error: string | null;
   isOffline: boolean;
-  isRealTimeConnected: boolean;
 }
 
 export type NavigationTab = 'inbox' | 'starred' | 'history' | 'channels' | 'direct';
