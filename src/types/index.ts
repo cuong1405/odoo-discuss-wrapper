@@ -62,10 +62,11 @@ export interface AppState {
   users: Record<number, User>;
   channels: Record<number, Channel>;
   messages: Record<number, Message[]>;
+  recentMessages: Message[];
   currentChannelId: number | null;
   isLoading: boolean;
   error: string | null;
   isOffline: boolean;
 }
 
-export type NavigationTab = 'inbox' | 'starred' | 'history' | 'channels' | 'direct';
+export type NavigationTab = 'inbox' | 'recent' | 'starred' | 'history' | 'channels' | 'direct';

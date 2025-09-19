@@ -30,15 +30,15 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       badge: unreadCount > 0 ? unreadCount : undefined
     },
     {
-      id: 'starred' as NavigationTab,
-      label: 'Starred',
-      icon: Star,
+      id: 'recent' as NavigationTab,
+      label: 'Recent',
+      icon: Clock,
       badge: undefined
     },
     {
-      id: 'history' as NavigationTab,
-      label: 'History',
-      icon: Clock,
+      id: 'starred' as NavigationTab,
+      label: 'Starred',
+      icon: Star,
       badge: undefined
     },
     {

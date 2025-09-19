@@ -320,6 +320,53 @@ class OdooAPI {
     };
   }
 
+  async getRecentMessages(limit = 20, offset = 0): Promise<Message[]> {
+    if (!this.client) throw new Error('Not authenticated');
+
+    try {
+      const response = await this.client.post('/web/dataset/call_kw', {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'mail.message',
+          method: 'search_read',
+          args: [[
+            ['message_type', 'in', ['comment', 'notification']],
+            ['model', '=', 'mail.channel']
+          ]],
+          kwargs: {
+            fields: ['id', 'body', 'author_id', 'date', 'starred_partner_ids', 'res_id', 'model'],
+            limit,
+            offset,
+            order: 'date desc'
+          }
+        }
+      });
+
+      if (response.data.error) {
+        throw new Error(response.data.error.data.message || 'Failed to fetch recent messages');
+      }
+
+      return response.data.result.map((msg: any) => ({
+        id: msg.id,
+        content: this.stripHtmlTags(msg.body || ''),
+        authorId: msg.author_id ? msg.author_id[0] : 0,
+        channelId: msg.res_id || 0,
+        createdAt: new Date(msg.date),
+        isStarred: msg.starred_partner_ids && msg.starred_partner_ids.length > 0
+      }));
+    } catch (error) {
+      console.error('Error fetching recent messages:', error);
+      throw error;
+    }
+  }
+
+  private stripHtmlTags(html: string): string {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || div.innerText || '';
+  }
+
   logout() {
     secureStorage.removeItem('auth_token');
     secureStorage.removeItem('server_url');

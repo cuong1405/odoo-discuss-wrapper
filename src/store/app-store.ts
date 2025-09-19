@@ -10,17 +10,20 @@ interface AppStore extends AppState {
   loadUsers: () => Promise<void>;
   loadChannels: () => Promise<void>;
   loadMessages: (channelId: number) => Promise<void>;
+  loadRecentMessages: () => Promise<void>;
   sendMessage: (channelId: number, content: string) => Promise<void>;
   toggleStarMessage: (messageId: number) => Promise<void>;
   setOfflineStatus: (isOffline: boolean) => void;
   getUnreadCount: () => number;
   getStarredMessages: () => Message[];
+  recentMessages: Message[];
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
   users: {},
   channels: {},
   messages: {},
+  recentMessages: [],
   currentChannelId: null,
   currentTab: 'inbox',
   isLoading: false,
@@ -136,6 +139,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to load messages',
+        isLoading: false 
+      });
+    }
+  },
+
+  loadRecentMessages: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      
+      // Try to load from cache first
+      const cachedMessages = await dbOperations.getRecentMessages(20);
+      if (cachedMessages.length > 0) {
+        set({ recentMessages: cachedMessages });
+      }
+
+      // Then fetch fresh data from Odoo API
+      const recentMessages = await odooAPI.getRecentMessages(20, 0);
+      
+      // Save to cache
+      await dbOperations.saveMessages(recentMessages);
+      
+      set({ recentMessages, isLoading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to load recent messages',
         isLoading: false 
       });
     }
