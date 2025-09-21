@@ -8,6 +8,8 @@ export default defineConfig({
       '/api': {
         target: 'https://leonix.vn',
         changeOrigin: true,
+        timeout: 60000,
+        proxyTimeout: 60000,
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
