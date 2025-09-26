@@ -324,6 +324,7 @@ class OdooAPI {
   }
 
   async getRecentMessages(limit = 20, offset = 0): Promise<Message[]> {
+    console.log('Cookies before fetching messages:', document.cookie);
     if (!this.client) throw new Error('Not authenticated');
 
     try {
