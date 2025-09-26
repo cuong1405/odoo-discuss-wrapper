@@ -52,6 +52,7 @@ class OdooAPI {
       }
 
       const sessionInfo = response.data.result;
+      console.log('sessionInfo:', sessionInfo);
       if (!sessionInfo || !sessionInfo.uid) {
         throw new Error('Invalid credentials');
       }
