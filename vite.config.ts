@@ -18,10 +18,13 @@ export default defineConfig({
           proxy.on('proxyRes', (proxyRes, req, res) => {
             // Handle cookies properly
             const setCookie = proxyRes.headers['set-cookie'];
+            console.log('Raw Set-Cookie from Odoo:', setCookie);
             if (setCookie) {
               proxyRes.headers['set-cookie'] = setCookie.map(cookie => 
                 cookie.replace(/; secure/gi, '').replace(/; samesite=none/gi, '')
               );
+              proxyRes.headers['set-cookie'] = rewritten;
+              console.log('Rewritten Set-Cookie for frontend:', rewritten);
             }
           });
         }
