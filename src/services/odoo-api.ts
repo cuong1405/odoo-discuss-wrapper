@@ -118,6 +118,7 @@ class OdooAPI {
         config.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
         config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie';
       }
+      console.log('Outgoing request:', config.url, config);
       return config;
     });
 
