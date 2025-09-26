@@ -58,6 +58,7 @@ class OdooAPI {
 
       // Store authentication data
       const token = sessionInfo.session_id || 'authenticated';
+      console.log('Value of token:', token);
       secureStorage.setItem('auth_token', token);
       secureStorage.setItem('server_url', this.originalServerUrl);
       secureStorage.setItem('database', this.database);
