@@ -124,7 +124,10 @@ class OdooAPI {
 
     // Add response interceptor for token refresh
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log('Incoming response:', response.config.url, response);
+        return response
+      },
       async (error) => {
         if (error.response?.status === 401) {
           // Token expired, clear storage and redirect to login
@@ -133,6 +136,7 @@ class OdooAPI {
           secureStorage.removeItem('database');
           window.location.reload();
         }
+        console.error('Response error:', error.response ? error.response.config.url : '', error);
         return Promise.reject(error);
       }
     );
