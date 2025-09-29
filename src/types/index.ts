@@ -3,7 +3,6 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
-  isOnline: boolean;
   lastSeen?: Date;
 }
 
@@ -25,8 +24,9 @@ export interface Channel {
   description?: string;
   type: 'channel' | 'direct' | 'group';
   memberIds: number[];
-  unreadCount: number;
-  lastMessage?: Message;
+  partnerIds: number[];
+  avatar?: string;
+  isMember?: boolean;
   isArchived: boolean;
 }
 

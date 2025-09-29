@@ -156,11 +156,39 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // Then fetch fresh data from Odoo API
       const recentMessages = await odooAPI.getRecentMessages(20, 0);
-      
+
+      // Collect author and channel IDS
+      const authorIds = [... new Set(recentMessages.map(m => m.authorId).filter(Boolean))];
+      const channelIds = [... new Set(recentMessages.map(m => m.channelId).filter(Boolean))];
+
+      // Fetch missing users
+      const missingUserIds = authorIds.filter(id => !get().users[id]);
+      let newUsers: User[] = [];
+      if (missingUserIds.length) {
+        newUsers = await odooAPI.getUsersByIds(missingUserIds);
+      }
+
+      // Fetch missing channels
+      const missingChannelIds = channelIds.filter(id => !get().channels[id]);
+      let newChannels: Channel[] = [];
+      if (missingChannelIds.length) {
+        newChannels = await odooAPI.getChannelsByIds(missingChannelIds);
+      }
       // Save to cache
       await dbOperations.saveMessages(recentMessages);
       
-      set({ recentMessages, isLoading: false });
+      set(state => ({
+        recentMessages,
+        users: {
+          ...state.users,
+          ...Object.fromEntries(newUsers.map(u => [u.id, u]))
+        },
+        channels: {
+          ...state.channels,
+          ...Object.fromEntries(newChannels.map(c => [c.id, c]))
+        },
+        isLoading: false
+      }));
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to load recent messages',

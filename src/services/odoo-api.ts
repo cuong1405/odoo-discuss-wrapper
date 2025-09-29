@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { AuthCredentials, User, Channel, Message } from '../types';
 import { secureStorage } from '../utils/crypto';
+import { userInfo } from 'os';
 
 class OdooAPI {
   private client: AxiosInstance | null = null;
@@ -74,7 +75,6 @@ class OdooAPI {
           id: sessionInfo.uid,
           name: sessionInfo.name,
           email: sessionInfo.username,
-          isOnline: true
         }
       };
     } catch (error) {
@@ -119,16 +119,12 @@ class OdooAPI {
         config.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
         config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cookie';
       }
-      console.log('Outgoing request:', config.url, config);
       return config;
     });
 
     // Add response interceptor for token refresh
     this.client.interceptors.response.use(
-      (response) => {
-        console.log('Incoming response:', response.config.url, response);
-        return response
-      },
+      (response) => response,
       async (error) => {
         if (error.response?.status === 401) {
           // Token expired, clear storage and redirect to login
@@ -166,7 +162,6 @@ class OdooAPI {
           id: 1,
           name: 'User',
           email: 'user@example.com',
-          isOnline: true
         }
       };
     } catch {
@@ -202,7 +197,6 @@ class OdooAPI {
           name: userData.name,
           email: userData.email,
           avatar: userData.avatar_128 ? `data:image/png;base64,${userData.avatar_128}` : undefined,
-          isOnline: true
         };
       } else {
         throw new Error('No user data returned');
@@ -214,7 +208,6 @@ class OdooAPI {
         id: 1,
         name: 'User',
         email: 'user@example.com',
-        isOnline: true
       };
     }
   }
@@ -226,7 +219,7 @@ class OdooAPI {
       jsonrpc: '2.0',
       method: 'call',
       params: {
-        model: 'res.users',
+        model: 'res.partner',
         method: 'search_read',
         args: [[]],
         kwargs: {
@@ -236,12 +229,11 @@ class OdooAPI {
       }
     });
 
-    return response.data.result.map((user: any) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar_128 ? `data:image/png;base64,${user.avatar_128}` : undefined,
-      isOnline: Math.random() > 0.3 // Mock online status
+    return response.data.result.map((partner: any) => ({
+      id: partner.id,
+      name: partner.name,
+      email: partner.email || '',
+      avatar: partner.avatar_128 ? `data:image/png;base64,${partner.avatar_128}` : `${this.originalServerUrl}/web/image/res.partner/${partner.id}/avatar_128`,
     }));
   }
 
@@ -252,11 +244,22 @@ class OdooAPI {
       jsonrpc: '2.0',
       method: 'call',
       params: {
-        model: 'mail.channel',
+        model: 'discuss.channel',
         method: 'search_read',
         args: [[]],
         kwargs: {
-          fields: ['id', 'name', 'description', 'channel_type', 'channel_member_ids'],
+          fields: [
+            'active',
+            'id',
+            'name',
+            'description',
+            'channel_type',
+            'channel_member_ids',
+            'channel_partner_ids',
+            'avatar_128',
+            'is_member',
+            'member_count'
+          ],
           limit: 100
         }
       }
@@ -268,8 +271,11 @@ class OdooAPI {
       description: channel.description,
       type: channel.channel_type === 'chat' ? 'direct' : 'channel',
       memberIds: channel.channel_member_ids,
-      unreadCount: Math.floor(Math.random() * 5), // Mock unread count
-      isArchived: false
+      partnerIds: channel.channel_partner_ids,
+      avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` : undefined,
+      isMember: channel.is_member,
+      memberCount: channel.member_count,
+      isArchived: !channel.active
     }));
   }
 
@@ -282,7 +288,7 @@ class OdooAPI {
       params: {
         model: 'mail.message',
         method: 'search_read',
-        args: [[['res_id', '=', channelId], ['model', '=', 'mail.channel']]],
+        args: [[['res_id', '=', channelId], ['model', '=', 'discuss.channel']]],
         kwargs: {
           fields: ['id', 'body', 'author_id', 'date', 'starred_partner_ids'],
           limit,
@@ -308,7 +314,7 @@ class OdooAPI {
       jsonrpc: '2.0',
       method: 'call',
       params: {
-        model: 'mail.channel',
+        model: 'discuss.channel',
         method: 'message_post',
         args: [channelId],
         kwargs: {
@@ -330,7 +336,6 @@ class OdooAPI {
   }
 
   async getRecentMessages(limit = 20, offset = 0): Promise<Message[]> {
-    console.log('Cookies before fetching messages:', document.cookie);
     if (!this.client) throw new Error('Not authenticated');
 
     try {
@@ -341,8 +346,7 @@ class OdooAPI {
           model: 'mail.message',
           method: 'search_read',
           args: [[
-            ['message_type', 'in', ['comment', 'notification']],
-            ['model', '=', 'mail.channel']
+            ['model', '=', 'discuss.channel']
           ]],
           kwargs: {
             fields: ['id', 'body', 'author_id', 'date', 'starred_partner_ids', 'res_id', 'model'],
@@ -352,6 +356,7 @@ class OdooAPI {
           }
         }
       });
+
 
       if (response.data.error) {
         throw new Error(response.data.error.data.message || 'Failed to fetch recent messages');
@@ -369,6 +374,77 @@ class OdooAPI {
       console.error('Error fetching recent messages:', error);
       throw error;
     }
+  }
+
+  async getUsersByIds(ids: number[]): Promise<User[]> {
+    if (!this.client) throw new Error('Not authenticated');
+    if (!ids.length) return [];
+    
+    const response = await this.client.post('/web/dataset/call_kw', {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'res.partner',
+        method: 'read',
+        args: [ids],
+        kwargs: {fields: ['id', 'name', 'email', 'avatar_128']}
+      }
+    });
+
+    console.log('getUsersByIds ids:', ids);
+    console.log('getUsersByIds response.data.result:', response.data?.result);
+
+    return response.data.result.map((partner: any) => ({
+      id: partner.id,
+      name: partner.name,
+      email: partner.email || '',
+      avatar: partner.avatar_128 ? `data:image/png;base64,${partner.avatar_128}` : undefined,
+    }));
+  }
+
+  async getChannelsByIds(ids: number[]): Promise<Channel[]> {
+    if (!this.client) throw new Error('Not authenticated');
+    if (!ids.length) return [];
+    
+    const response = await this.client.post('/web/dataset/call_kw', {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'discuss.channel',
+        method: 'read',
+        args: [ids],
+        kwargs: {
+          fields: [
+            'active',
+            'id',
+            'name',
+            'description',
+            'channel_type',
+            'channel_member_ids',
+            'channel_partner_ids',
+            'avatar_128',
+            'is_member',
+            'member_count'
+          ],
+        }
+      }
+    });
+
+    console.log('getChannelsByIds ids:', ids);
+    console.log('getChannelsByIds response.data.result:', response.data?.result);
+
+    return response.data.result.map((channel: any) => ({
+      id: channel.id,
+      name: channel.name,
+      description: channel.description,
+      type: channel.channel_type === 'chat' ? 'direct' : 'channel',
+      memberIds: channel.channel_member_ids,
+      partnerIds: channel.channel_partner_ids,
+      avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` : undefined,
+      isMember: channel.is_member,
+      memberCount: channel.member_count,
+      isArchived: !channel.active
+    }));
   }
 
   private stripHtmlTags(html: string): string {
