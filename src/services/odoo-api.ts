@@ -233,7 +233,7 @@ class OdooAPI {
       id: partner.id,
       name: partner.name,
       email: partner.email || '',
-      avatar: partner.avatar_128 ? `data:image/png;base64,${partner.avatar_128}` : `${this.originalServerUrl}/web/image/res.partner/${partner.id}/avatar_128`,
+      avatar: partner.avatar_128 ? `data:image/png;base64,${partner.avatar_128}` : undefined,
     }));
   }
 
@@ -246,7 +246,7 @@ class OdooAPI {
       params: {
         model: 'discuss.channel',
         method: 'search_read',
-        args: [[]],
+        args: [[['is_member', '=', true]]],
         kwargs: {
           fields: [
             'active',
@@ -272,7 +272,7 @@ class OdooAPI {
       type: channel.channel_type === 'chat' ? 'direct' : 'channel',
       memberIds: channel.channel_member_ids,
       partnerIds: channel.channel_partner_ids,
-      avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` : undefined,
+      avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` :  `${this.originalServerUrl}/web/image/discuss.channel/${channel.id}/avatar_128`,
       isMember: channel.is_member,
       memberCount: channel.member_count,
       isArchived: !channel.active
@@ -440,7 +440,7 @@ class OdooAPI {
       type: channel.channel_type === 'chat' ? 'direct' : 'channel',
       memberIds: channel.channel_member_ids,
       partnerIds: channel.channel_partner_ids,
-      avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` : undefined,
+      avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` :  `${this.originalServerUrl}/web/image/discuss.channel/${channel.id}/avatar_128`,
       isMember: channel.is_member,
       memberCount: channel.member_count,
       isArchived: !channel.active
