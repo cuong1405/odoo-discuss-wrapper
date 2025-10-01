@@ -246,7 +246,7 @@ class OdooAPI {
       params: {
         model: 'discuss.channel',
         method: 'search_read',
-        args: [[['is_member', '=', true]]],
+        args: [[['is_member', '=', true], ['channel_type', '=', 'channel']]],
         kwargs: {
           fields: [
             'active',
@@ -273,6 +273,49 @@ class OdooAPI {
       memberIds: channel.channel_member_ids,
       partnerIds: channel.channel_partner_ids,
       avatar: channel.avatar_128 ? `data:image/png;base64,${channel.avatar_128}` :  `${this.originalServerUrl}/web/image/discuss.channel/${channel.id}/avatar_128`,
+      isMember: channel.is_member,
+      memberCount: channel.member_count,
+      isArchived: !channel.active
+    }));
+  }
+
+  async getDirectChannels(): Promise<Channel[]> {
+    if (!this.client) throw new Error('Not authenticated');
+    const response = await this.client.post('/web/dataset/call_kw', {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'discuss.channel',
+        method: 'search_read',
+        args: [[['channel_type', 'in', ['chat', 'group']], ['is_member', '=', true]]],
+        kwargs: {
+          fields: [
+            'active',
+            'id',
+            'name',
+            'description',
+            'channel_type',
+            'channel_member_ids',
+            'channel_partner_ids',
+            'avatar_128',
+            'is_member',
+            'member_count'
+          ],
+          limit: 100
+        }
+      }
+    });
+
+    return response.data.result.map((channel: any) => ({
+      id: channel.id,
+      name: channel.name,
+      description: channel.description,
+      type: 'direct',
+      memberIds: channel.channel_member_ids,
+      partnerIds: channel.channel_partner_ids,
+      avatar: channel.avatar_128
+        ? `data:image/png;base64,${channel.avatar_128}`
+        : `${this.originalServerUrl}/web/image/discuss.channel/${channel.id}/avatar_128`,
       isMember: channel.is_member,
       memberCount: channel.member_count,
       isArchived: !channel.active

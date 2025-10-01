@@ -5,11 +5,13 @@ import { RecentMessagesList } from './components/messages/RecentMessagesList';
 import { useAuthStore } from './store/auth-store';
 import { useAppStore } from './store/app-store';
 import { ChannelsTab } from './components/layout/ChannelsTab';
+import { DirectMessagesTab } from './components/layout/DirectMessagesTab';
 
 function App() {
   const { isAuthenticated, restoreSession } = useAuthStore();
   const { currentTab, setCurrentTab, loadRecentMessages } = useAppStore();
   const loadChannels = useAppStore(state => state.loadChannels);
+  const loadDirectChannels = useAppStore(state => state.loadDirectChannels);
 
   useEffect(() => {
     // Try to restore previous session on app start
@@ -22,6 +24,13 @@ function App() {
       loadChannels();
     }
   }, [isAuthenticated, loadChannels]);
+
+  useEffect(() => {
+    // Load direct channels when authenticated
+    if (isAuthenticated) {
+      loadDirectChannels();
+    }
+  }, [isAuthenticated, loadDirectChannels]);
 
   useEffect(() => {
     // Load recent messages when authenticated
@@ -43,6 +52,15 @@ function App() {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  useEffect(() => {
+    // Request notification permission on app start
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Redirect to login if not authenticated
 
   if (!isAuthenticated) {
     return <LoginForm />;
@@ -76,15 +94,7 @@ function App() {
 
         {currentTab === 'channels' && <ChannelsTab />}
 
-        {currentTab === 'direct' && (
-          <div className="p-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Direct Messages</h1>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-              <div className="text-gray-500 mb-2">💬</div>
-              <p className="text-gray-600">Direct messages will appear here</p>
-            </div>
-          </div>
-        )}
+        {currentTab === 'direct' && <DirectMessagesTab />}
       </div>
 
       {/* Bottom Navigation */}
