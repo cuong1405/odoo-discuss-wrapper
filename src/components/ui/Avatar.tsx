@@ -2,11 +2,13 @@ import React from 'react';
 import { User } from 'lucide-react';
 
 interface AvatarProps {
-  user: {
+  user?: {
     name: string;
     avatar?: string;
     isOnline?: boolean;
   };
+  src?: string;
+  alt?: string;
   size?: 'sm' | 'md' | 'lg';
   showOnlineStatus?: boolean;
   className?: string;
@@ -14,10 +16,14 @@ interface AvatarProps {
 
 export const Avatar: React.FC<AvatarProps> = ({
   user,
+  src,
+  alt,
   size = 'md',
   showOnlineStatus = false,
   className = ''
 }) => {
+  const avatarSrc = src || user?.avatar;
+  const avatarAlt = alt || user?.name || 'User';
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
@@ -43,42 +49,42 @@ export const Avatar: React.FC<AvatarProps> = ({
     <div className={`relative ${className}`}>
       <div
         className={`
-          ${sizeClasses[size]} 
-          rounded-full 
-          overflow-hidden 
-          bg-gradient-to-br 
-          from-indigo-500 
+          ${sizeClasses[size]}
+          rounded-full
+          overflow-hidden
+          bg-gradient-to-br
+          from-indigo-500
           to-purple-600
-          flex 
-          items-center 
-          justify-center 
-          text-white 
+          flex
+          items-center
+          justify-center
+          text-white
           font-medium
           ring-2
           ring-white
           shadow-sm
         `}
       >
-        {user.avatar ? (
+        {avatarSrc ? (
           <img
-            src={user.avatar}
-            alt={user.name}
+            src={avatarSrc}
+            alt={avatarAlt}
             className="w-full h-full object-cover"
           />
         ) : (
-          <span>{getInitials(user.name)}</span>
+          <span>{getInitials(avatarAlt)}</span>
         )}
       </div>
-      
-      {showOnlineStatus && (
+
+      {showOnlineStatus && user && (
         <div
           className={`
-            absolute 
-            -bottom-0.5 
-            -right-0.5 
+            absolute
+            -bottom-0.5
+            -right-0.5
             ${statusSizes[size]}
-            rounded-full 
-            border-2 
+            rounded-full
+            border-2
             border-white
             ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}
           `}

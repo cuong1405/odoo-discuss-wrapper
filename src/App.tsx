@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { LoginForm } from './components/auth/LoginForm';
+import { TopBar } from './components/layout/TopBar';
 import { BottomNavigation } from './components/layout/BottomNavigation';
 import { RecentMessagesList } from './components/messages/RecentMessagesList';
 import { useAuthStore } from './store/auth-store';
@@ -49,9 +50,12 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <TopBar />
+
       {/* Main Content Area */}
-      <div className="h-full">
+      <div className="pt-[140px] pb-16">
         {currentTab === 'inbox' && (
           <div className="p-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Inbox</h1>
