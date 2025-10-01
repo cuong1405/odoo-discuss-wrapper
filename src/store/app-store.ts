@@ -239,8 +239,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   getUnreadCount: (): number => {
     const state = get();
-    return Object.values(state.channels).reduce((total, channel) => 
-      total + channel.unreadCount, 0
+    return Object.values(state.channels).reduce((total, channel) =>
+      total + (channel.unreadCount || 0), 0
     );
   },
 

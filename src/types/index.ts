@@ -28,6 +28,7 @@ export interface Channel {
   avatar?: string;
   isMember?: boolean;
   isArchived: boolean;
+  unreadCount?: number;
 }
 
 export interface Attachment {
@@ -69,4 +70,4 @@ export interface AppState {
   isOffline: boolean;
 }
 
-export type NavigationTab = 'inbox' | 'recent' | 'starred' | 'history' | 'channels' | 'direct';
+export type NavigationTab = 'inbox' | 'channels' | 'dms' | 'activity';

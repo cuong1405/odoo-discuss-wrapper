@@ -61,22 +61,10 @@ function App() {
             </div>
           </div>
         )}
-        
-        {currentTab === 'recent' && <RecentMessagesList />}
-        
-        {currentTab === 'starred' && (
-          <div className="p-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Starred Messages</h1>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-              <div className="text-gray-500 mb-2">⭐</div>
-              <p className="text-gray-600">Starred messages will appear here</p>
-            </div>
-          </div>
-        )}
 
         {currentTab === 'channels' && <ChannelsTab />}
 
-        {currentTab === 'direct' && (
+        {currentTab === 'dms' && (
           <div className="p-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Direct Messages</h1>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
@@ -85,6 +73,8 @@ function App() {
             </div>
           </div>
         )}
+
+        {currentTab === 'activity' && <RecentMessagesList />}
       </div>
 
       {/* Bottom Navigation */}
