@@ -1,11 +1,9 @@
 import React from 'react';
-import { 
-  Inbox, 
-  Star, 
-  Clock, 
-  Hash, 
+import {
+  Mail,
+  Hash,
   MessageCircle,
-  Circle
+  Bell
 } from 'lucide-react';
 import { NavigationTab } from '../../types';
 import { useAppStore } from '../../store/app-store';
@@ -26,20 +24,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     {
       id: 'inbox' as NavigationTab,
       label: 'Inbox',
-      icon: Inbox,
+      icon: Mail,
       badge: unreadCount > 0 ? unreadCount : undefined
-    },
-    {
-      id: 'recent' as NavigationTab,
-      label: 'Recent',
-      icon: Clock,
-      badge: undefined
-    },
-    {
-      id: 'starred' as NavigationTab,
-      label: 'Starred',
-      icon: Star,
-      badge: undefined
     },
     {
       id: 'channels' as NavigationTab,
@@ -48,9 +34,15 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       badge: undefined
     },
     {
-      id: 'direct' as NavigationTab,
-      label: 'Direct',
+      id: 'dms' as NavigationTab,
+      label: 'DMs',
       icon: MessageCircle,
+      badge: undefined
+    },
+    {
+      id: 'activity' as NavigationTab,
+      label: 'Activity',
+      icon: Bell,
       badge: undefined
     }
   ];
