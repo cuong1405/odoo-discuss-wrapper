@@ -148,6 +148,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const channels = await odooAPI.getDirectChannels();
+
+      // Fetch missing users for direct chats
+      const state = get();
+      const otherUserIds = channels
+        .map((c) => c.otherUserId)
+        .filter((id): id is number => !!id && !state.users[id]);
+
+      if (otherUserIds.length > 0) {
+        const newUsers = await odooAPI.getUsersByIds(otherUserIds);
+        await dbOperations.saveUsers(newUsers);
+        set((s) => ({
+          users: {
+            ...s.users,
+            ...Object.fromEntries(newUsers.map((u) => [u.id, u])),
+          },
+        }));
+      }
+
       const channelsMap = channels.reduce(
         (acc, channel) => {
           acc[channel.id] = channel;
@@ -218,26 +236,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Then fetch fresh data from Odoo API
       const recentMessages = await odooAPI.getRecentMessages(20, 0);
 
-      /// --- Notification logic ---
-      const state = get();
-      const prevMessages = state.recentMessages || [];
-      const prevIds = new Set(prevMessages.map((m) => m.id));
-      const newMessages = recentMessages.filter((m) => !prevIds.has(m.id));
-
-      newMessages.forEach((msg) => {
-        const channel =
-          state.channels[msg.channelId] || state.directChannels[msg.channelId];
-        const author = state.users[msg.authorId];
-        // if (channel) {
-        //   notifyNewMessage(
-        //     channel,
-        //     msg,
-        //     author ? author.name : 'Unknown'
-        //   );
-        // }
-        notifyNewMessage(channel, msg, author ? author.name : "Unknown");
-      });
-
       // Collect author and channel IDS
       const authorIds = [
         ...new Set(recentMessages.map((m) => m.authorId).filter(Boolean)),
@@ -274,6 +272,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
         isLoading: false,
       }));
+
+      /// --- Notification logic ---
+      const state = get();
+      const prevMessages = state.recentMessages || [];
+      const prevIds = new Set(prevMessages.map((m) => m.id));
+      const newMessages = recentMessages.filter((m) => !prevIds.has(m.id));
+
+      recentMessages.slice(0, 5).forEach((msg) => {
+        const channel =
+          state.channels[msg.channelId] || state.directChannels[msg.channelId];
+        const author = state.users[msg.authorId];
+        // if (channel) {
+        //   notifyNewMessage(
+        //     channel,
+        //     msg,
+        //     author ? author.name : 'Unknown'
+        //   );
+        // }
+        notifyNewMessage(channel, msg, author ? author.name : "Unknown");
+      });
     } catch (error) {
       set({
         error:
@@ -332,8 +350,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   getUnreadCount: (): number => {
     const state = get();
-    return Object.values(state.channels).reduce((total, channel) =>
-      total + (channel.unreadCount || 0), 0
+    return Object.values(state.channels).reduce(
+      (total, channel) => total + (channel.unreadCount || 0),
+      0,
     );
   },
 
@@ -350,4 +369,3 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
   },
 }));
-

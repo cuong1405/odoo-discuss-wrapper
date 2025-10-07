@@ -22,13 +22,14 @@ export interface Channel {
   id: number;
   name: string;
   description?: string;
-  type: 'channel' | 'direct' | 'group';
+  type: "channel" | "chat" | "group";
   memberIds: number[];
   partnerIds: number[];
   avatar?: string;
   isMember?: boolean;
   isArchived: boolean;
   unreadCount?: number;
+  otherUserId?: number;
 }
 
 export interface Attachment {
@@ -70,4 +71,5 @@ export interface AppState {
   isOffline: boolean;
 }
 
-export type NavigationTab = 'inbox' | 'channels' | 'dms' | 'activity';
+export type NavigationTab = "inbox" | "channels" | "dms" | "activity";
+
