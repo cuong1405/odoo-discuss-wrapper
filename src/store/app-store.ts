@@ -55,7 +55,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   isOffline: false,
 
   setCurrentTab: (tab: NavigationTab) => {
-    set({ currentTab: tab });
+    set({ currentTab: tab, currentChannelId: null });
   },
 
   setCurrentChannel: (channelId: number | null) => {
