@@ -9,19 +9,19 @@ export const ChannelsTab: React.FC = () => {
   const currentChannelId = useAppStore(state => state.currentChannelId);
   const setCurrentChannel = useAppStore(state => state.setCurrentChannel);
   const isLoading = useAppStore(state => state.isLoading);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  const [slideIn, setSlideIn] = useState(false);
 
   const memberChannels = Object.values(channels).filter(ch => ch.isMember);
 
   useEffect(() => {
     if (currentChannelId) {
-      setIsTransitioning(true);
-      setTimeout(() => setShowChat(true), 50);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSlideIn(true);
+        });
+      });
     } else {
-      setShowChat(false);
-      const timer = setTimeout(() => setIsTransitioning(false), 300);
-      return () => clearTimeout(timer);
+      setSlideIn(false);
     }
   }, [currentChannelId]);
 
@@ -30,7 +30,7 @@ export const ChannelsTab: React.FC = () => {
     if (channel) {
       return (
         <div className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out ${
-          showChat ? 'translate-x-0' : 'translate-x-full'
+          slideIn ? 'translate-x-0' : 'translate-x-full'
         }`}>
           <ChatView
             channel={channel}
