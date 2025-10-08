@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAppStore } from "../../store/app-store";
 import { Avatar } from "../ui/Avatar";
 import { ChatView } from "../messages/ChatView";
@@ -13,6 +13,15 @@ export const DirectMessagesTab: React.FC = () => {
     users,
     isLoading,
   } = useAppStore();
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleBack = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setCurrentChannel(null);
+      setIsClosing(false);
+    }, 300);
+  };
 
   const getChannelDisplayInfo = (channel: any) => {
     if (channel.type === "group") {
@@ -45,11 +54,10 @@ export const DirectMessagesTab: React.FC = () => {
     const channel = directChannels[currentChannelId];
     if (channel) {
       return (
-        <div className="fixed inset-0 z-50 bg-white animate-slide-in">
-          <ChatView
-            channel={channel}
-            onBack={() => setCurrentChannel(null)}
-          />
+        <div
+          className={`fixed inset-0 z-50 bg-white ${isClosing ? "animate-slide-out" : "animate-slide-in"}`}
+        >
+          <ChatView channel={channel} onBack={handleBack} />
         </div>
       );
     }

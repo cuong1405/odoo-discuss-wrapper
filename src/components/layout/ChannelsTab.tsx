@@ -1,26 +1,41 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "../../store/app-store";
 import { Hash } from "lucide-react";
 import { ChatView } from "../messages/ChatView";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { channel } from "diagnostics_channel";
 
 export const ChannelsTab: React.FC = () => {
-  const channels = useAppStore(state => state.channels);
-  const currentChannelId = useAppStore(state => state.currentChannelId);
-  const setCurrentChannel = useAppStore(state => state.setCurrentChannel);
-  const isLoading = useAppStore(state => state.isLoading);
+  const channels = useAppStore((state) => state.channels);
+  const currentChannelId = useAppStore((state) => state.currentChannelId);
+  const setCurrentChannel = useAppStore((state) => state.setCurrentChannel);
+  const isLoading = useAppStore((state) => state.isLoading);
+  const [isClosing, setIsClosing] = useState(false);
 
-  const memberChannels = Object.values(channels).filter(ch => ch.isMember);
+  const memberChannels = Object.values(channels).filter((ch) => ch.isMember);
+
+  // useEffect(() => {
+  //   if (currentChannelId) {
+  //     setIsOpened(true); // Trigger slide-in animation
+  //   }
+  // }, [currentChannelId]);
+  //
+  const handleBack = () => {
+    setIsClosing(true); // Trigger slide-out animation
+    setTimeout(() => {
+      setCurrentChannel(null); // Remove chat view after animation
+      setIsClosing(false);
+    }, 300);
+  };
 
   if (currentChannelId) {
     const channel = channels[currentChannelId];
     if (channel) {
       return (
-        <div className="fixed inset-0 z-50 bg-white animate-slide-in">
-          <ChatView
-            channel={channel}
-            onBack={() => setCurrentChannel(null)}
-          />
+        <div
+          className={`fixed inset-0 z-50 bg-white ${isClosing ? "animate-slide-out" : "animate-slide-in"}`}
+        >
+          <ChatView channel={channel} onBack={handleBack} />
         </div>
       );
     }
@@ -47,7 +62,7 @@ export const ChannelsTab: React.FC = () => {
         </div>
       ) : (
         <div className="divide-y divide-gray-100">
-          {memberChannels.map(channel => (
+          {memberChannels.map((channel) => (
             <div
               key={channel.id}
               className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
