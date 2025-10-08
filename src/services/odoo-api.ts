@@ -124,6 +124,7 @@ class OdooAPI {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "X-Odoo-database": this.database,
       },
       withCredentials: true,
     });
