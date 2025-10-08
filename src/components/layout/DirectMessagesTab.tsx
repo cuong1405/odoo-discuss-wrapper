@@ -13,7 +13,8 @@ export const DirectMessagesTab: React.FC = () => {
     users,
     isLoading,
   } = useAppStore();
-  const [slideIn, setSlideIn] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const getChannelDisplayInfo = (channel: any) => {
     if (channel.type === "group") {
@@ -44,13 +45,12 @@ export const DirectMessagesTab: React.FC = () => {
 
   useEffect(() => {
     if (currentChannelId) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setSlideIn(true);
-        });
-      });
+      setIsTransitioning(true);
+      setTimeout(() => setShowChat(true), 50);
     } else {
-      setSlideIn(false);
+      setShowChat(false);
+      const timer = setTimeout(() => setIsTransitioning(false), 300);
+      return () => clearTimeout(timer);
     }
   }, [currentChannelId]);
 
@@ -59,7 +59,7 @@ export const DirectMessagesTab: React.FC = () => {
     if (channel) {
       return (
         <div className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out ${
-          slideIn ? 'translate-x-0' : 'translate-x-full'
+          showChat ? 'translate-x-0' : 'translate-x-full'
         }`}>
           <ChatView
             channel={channel}
