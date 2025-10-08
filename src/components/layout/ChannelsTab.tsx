@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAppStore } from "../../store/app-store";
 import { Hash } from "lucide-react";
 import { ChatView } from "../messages/ChatView";
@@ -9,14 +9,29 @@ export const ChannelsTab: React.FC = () => {
   const currentChannelId = useAppStore(state => state.currentChannelId);
   const setCurrentChannel = useAppStore(state => state.setCurrentChannel);
   const isLoading = useAppStore(state => state.isLoading);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const memberChannels = Object.values(channels).filter(ch => ch.isMember);
+
+  useEffect(() => {
+    if (currentChannelId) {
+      setIsTransitioning(true);
+      setTimeout(() => setShowChat(true), 50);
+    } else {
+      setShowChat(false);
+      const timer = setTimeout(() => setIsTransitioning(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentChannelId]);
 
   if (currentChannelId) {
     const channel = channels[currentChannelId];
     if (channel) {
       return (
-        <div className="h-[calc(100vh-140px-64px)]">
+        <div className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out ${
+          showChat ? 'translate-x-0' : 'translate-x-full'
+        }`}>
           <ChatView
             channel={channel}
             onBack={() => setCurrentChannel(null)}

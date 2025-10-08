@@ -10,7 +10,7 @@ import { DirectMessagesTab } from './components/layout/DirectMessagesTab';
 
 function App() {
   const { isAuthenticated, restoreSession } = useAuthStore();
-  const { currentTab, setCurrentTab, loadRecentMessages } = useAppStore();
+  const { currentTab, setCurrentTab, loadRecentMessages, currentChannelId } = useAppStore();
   const loadChannels = useAppStore(state => state.loadChannels);
   const loadDirectChannels = useAppStore(state => state.loadDirectChannels);
 
@@ -67,13 +67,15 @@ function App() {
     return <LoginForm />;
   }
 
+  const isInChatView = currentChannelId !== null;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <TopBar />
+      {/* Top Navigation Bar - Hidden when in chat view */}
+      {!isInChatView && <TopBar />}
 
       {/* Main Content Area */}
-      <div className="pt-[140px] pb-16">
+      <div className={isInChatView ? '' : 'pt-[140px] pb-16'}>
         {currentTab === 'inbox' && (
           <div className="p-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Inbox</h1>
@@ -91,11 +93,13 @@ function App() {
         {currentTab === 'activity' && <RecentMessagesList />}
       </div>
 
-      {/* Bottom Navigation */}
-      <BottomNavigation
-        currentTab={currentTab}
-        onTabChange={setCurrentTab}
-      />
+      {/* Bottom Navigation - Hidden when in chat view */}
+      {!isInChatView && (
+        <BottomNavigation
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+        />
+      )}
     </div>
   );
 }

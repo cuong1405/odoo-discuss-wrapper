@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAppStore } from "../../store/app-store";
 import { Avatar } from "../ui/Avatar";
 import { ChatView } from "../messages/ChatView";
@@ -13,6 +13,8 @@ export const DirectMessagesTab: React.FC = () => {
     users,
     isLoading,
   } = useAppStore();
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const getChannelDisplayInfo = (channel: any) => {
     if (channel.type === "group") {
@@ -41,11 +43,24 @@ export const DirectMessagesTab: React.FC = () => {
 
   const channelsList = Object.values(directChannels);
 
+  useEffect(() => {
+    if (currentChannelId) {
+      setIsTransitioning(true);
+      setTimeout(() => setShowChat(true), 50);
+    } else {
+      setShowChat(false);
+      const timer = setTimeout(() => setIsTransitioning(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentChannelId]);
+
   if (currentChannelId) {
     const channel = directChannels[currentChannelId];
     if (channel) {
       return (
-        <div className="h-[calc(100vh-140px-64px)]">
+        <div className={`fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out ${
+          showChat ? 'translate-x-0' : 'translate-x-full'
+        }`}>
           <ChatView
             channel={channel}
             onBack={() => setCurrentChannel(null)}
