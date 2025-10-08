@@ -28,18 +28,18 @@ class OdooAPI {
         },
       });
 
-      // Add request interceptor to handle CORS in production
-      authClient.interceptors.request.use((config) => {
-        // In production, we might need to handle CORS differently
-        if (!import.meta.env.DEV) {
-          config.headers["Access-Control-Allow-Origin"] = "*";
-          config.headers["Access-Control-Allow-Methods"] =
-            "GET, POST, PUT, DELETE, OPTIONS";
-          config.headers["Access-Control-Allow-Headers"] =
-            "Content-Type, Authorization, Cookie";
-        }
-        return config;
-      });
+      // // Add request interceptor to handle CORS in production
+      // authClient.interceptors.request.use((config) => {
+      //   // In production, we might need to handle CORS differently
+      //   if (!import.meta.env.DEV) {
+      //     config.headers["Access-Control-Allow-Origin"] = "*";
+      //     config.headers["Access-Control-Allow-Methods"] =
+      //       "GET, POST, PUT, DELETE, OPTIONS";
+      //     config.headers["Access-Control-Allow-Headers"] =
+      //       "Content-Type, Authorization, Cookie";
+      //   }
+      //   return config;
+      // });
       // Authenticate with Odoo
       const response = await authClient.post("/web/session/authenticate", {
         jsonrpc: "2.0",
@@ -128,18 +128,18 @@ class OdooAPI {
       withCredentials: true,
     });
 
-    // Add request interceptor for CORS handling
-    this.client.interceptors.request.use((config) => {
-      // In production, we might need to handle CORS differently
-      if (!import.meta.env.DEV) {
-        config.headers["Access-Control-Allow-Origin"] = "*";
-        config.headers["Access-Control-Allow-Methods"] =
-          "GET, POST, PUT, DELETE, OPTIONS";
-        config.headers["Access-Control-Allow-Headers"] =
-          "Content-Type, Authorization, Cookie";
-      }
-      return config;
-    });
+    // // Add request interceptor for CORS handling
+    // this.client.interceptors.request.use((config) => {
+    //   // In production, we might need to handle CORS differently
+    //   if (!import.meta.env.DEV) {
+    //     config.headers["Access-Control-Allow-Origin"] = "*";
+    //     config.headers["Access-Control-Allow-Methods"] =
+    //       "GET, POST, PUT, DELETE, OPTIONS";
+    //     config.headers["Access-Control-Allow-Headers"] =
+    //       "Content-Type, Authorization, Cookie";
+    //   }
+    //   return config;
+    // });
 
     // Add response interceptor for token refresh
     this.client.interceptors.response.use(

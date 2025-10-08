@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://leonix.vn",
+        target: "https://a19.leonix.vn",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
         configure: (proxy, options) => {
@@ -14,10 +14,6 @@ export default defineConfig({
             // Add necessary headers for Odoo
             proxyReq.setHeader("Content-Type", "application/json");
             proxyReq.setHeader("Accept", "application/json");
-            // Remove any custom CORS headers from the request
-            proxyReq.removeHeader('Access-Control-Allow-Origin');
-            proxyReq.removeHeader('Access-Control-Allow-Methods');
-            proxyReq.removeHeader('Access-Control-Allow-Headers');
           });
           proxy.on("proxyRes", (proxyRes, req, res) => {
             // Handle cookies properly
