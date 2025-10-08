@@ -15,7 +15,7 @@ class OdooAPI {
     try {
       this.originalServerUrl = credentials.serverUrl.replace(/\/$/, "");
       // Use proxy in development, direct URL in production
-      this.serverUrl = "/api";
+      this.serverUrl = import.meta.env.DEV ? "/api" : this.originalServerUrl;
       this.database = credentials.database;
 
       // Create temporary client for authentication
@@ -72,7 +72,7 @@ class OdooAPI {
       secureStorage.setItem("database", this.database);
 
       // Initialize authenticated client
-      this.initializeClient(token);
+      // this.initializeClient(token);
 
       const userId = sessionInfo.uid;
       const user = await this.getCurrentUser(userId);
@@ -177,7 +177,7 @@ class OdooAPI {
     this.originalServerUrl = originalServerUrl;
     this.serverUrl = import.meta.env.DEV ? "/api" : this.originalServerUrl;
     this.database = database;
-    this.initializeClient(token);
+    // this.initializeClient(token);
 
     try {
       const user = await this.getCurrentUser(userId);
@@ -196,6 +196,15 @@ class OdooAPI {
   }
 
   private async getCurrentUser(userId: number): Promise<User> {
+    if (!this.client) {
+      const token = secureStorage.getItem("auth_token");
+      if (token) {
+        this.initializeClient(token);
+      } else {
+        throw new Error("Authentication token not found.");
+      }
+    }
+
     if (!this.client) throw new Error("Not authenticated");
 
     try {
@@ -636,7 +645,7 @@ class OdooAPI {
     secureStorage.removeItem("server_url");
     secureStorage.removeItem("database");
     this.client = null;
-    this.serverUrl = null;
+    this.serverUrl = "";
     this.database = null;
   }
 }
