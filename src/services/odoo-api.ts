@@ -118,6 +118,8 @@ class OdooAPI {
   }
 
   private initializeClient(token: string) {
+    const isProduction = !import.meta.env.DEV;
+
     this.client = axios.create({
       baseURL: this.serverUrl,
       timeout: 30000,
@@ -125,8 +127,9 @@ class OdooAPI {
         "Content-Type": "application/json",
         Accept: "application/json",
         "X-Odoo-database": this.database,
+        ...(isProduction && { "X-Target-URL": this.originalServerUrl }),
       },
-      withCredentials: true,
+      withCredentials: false,
     });
 
     // // Add request interceptor for CORS handling
