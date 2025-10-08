@@ -15,7 +15,7 @@ class OdooAPI {
     try {
       this.originalServerUrl = credentials.serverUrl.replace(/\/$/, "");
       // Use proxy in development, direct URL in production
-      this.serverUrl = import.meta.env.DEV ? "/api" : this.originalServerUrl;
+      this.serverUrl = "/api";
       this.database = credentials.database;
 
       // Create temporary client for authentication
