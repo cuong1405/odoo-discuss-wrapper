@@ -76,7 +76,7 @@ class OdooAPI {
       secureStorage.setItem("database", this.database);
 
       // Initialize authenticated client
-      this.initializeClient(token);
+      // this.initializeClient(token);
 
       const userId = sessionInfo.uid;
       const user = await this.getCurrentUser(userId);
