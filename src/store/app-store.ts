@@ -185,41 +185,131 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  // loadMessages: async (channelId: number) => {
+  //   try {
+  //     const state = get();
+  //     set({ isLoading: true, error: null });
+  //
+  //     // Try to load from cache first
+  //     const cachedMessages = await dbOperations.getMessages(channelId, 100);
+  //     console.log("[loadMessages] Cached messages:", cachedMessages);
+  //     if (cachedMessages.length > 0) {
+  //       set({
+  //         messages: {
+  //           ...state.messages,
+  //           [channelId]: cachedMessages,
+  //         },
+  //       });
+  //     }
+  //
+  //     // Then fetch fresh data
+  //     const messages = await odooAPI.getMessages(channelId, 100);
+  //
+  //     // Save to cache
+  //     await dbOperations.saveMessages(messages);
+  //
+  //     set({
+  //       messages: {
+  //         ...state.messages,
+  //         [channelId]: messages,
+  //       },
+  //       isLoading: false,
+  //     });
+  //   } catch (error) {
+  //     set({
+  //       error:
+  //         error instanceof Error ? error.message : "Failed to load messages",
+  //       isLoading: false,
+  //     });
+  //   }
+  // },
+
   loadMessages: async (channelId: number) => {
+    const state = get();
+    const channel =
+      state.channels[channelId] || state.directChannels[channelId];
+    if (!channel) return;
+
     try {
-      const state = get();
       set({ isLoading: true, error: null });
 
       // Try to load from cache first
       const cachedMessages = await dbOperations.getMessages(channelId, 100);
       if (cachedMessages.length > 0) {
-        set({
+        set((state) => ({
           messages: {
             ...state.messages,
             [channelId]: cachedMessages,
           },
-        });
+          isLoading: false,
+        }));
+
+        // Refresh new messages in the background
+        loadNewMessages(channelId).catch(console.error);
+        return;
       }
 
-      // Then fetch fresh data
-      const messages = await odooAPI.getMessages(channelId, 100);
-
-      // Save to cache
-      await dbOperations.saveMessages(messages);
-
-      set({
-        messages: {
-          ...state.messages,
-          [channelId]: messages,
-        },
-        isLoading: false,
-      });
+      // If no cached messages, fetch new messages
+      await loadNewMessages(channelId);
     } catch (error) {
+      console.error(`Error loading messages for channel ${channelId}:`, error);
       set({
         error:
           error instanceof Error ? error.message : "Failed to load messages",
         isLoading: false,
       });
+    }
+
+    // Helper function to load new messages and update store
+    async function loadNewMessages(channelId: number) {
+      const channel =
+        get().channels[channelId] || get().directChannels[channelId];
+      if (!channel?.messageIds?.length) {
+        set((state) => ({
+          messages: {
+            ...state.messages,
+            [channelId]: [],
+          },
+          isLoading: false,
+        }));
+        return;
+      }
+
+      // Fetch messages using messageIds
+      const messages = await odooAPI.getMessagesByIds(channel.messageIds);
+
+      // Get authorIDs from the messages
+      const authorIds = [
+        ...new Set(messages.map((m) => m.authorId).filter(Boolean)),
+      ];
+
+      // Fetch missing users
+      const missingUserIds = authorIds.filter((id) => !get().users[id]);
+      let newUsers: User[] = [];
+      if (missingUserIds.length) {
+        newUsers = await odooAPI.getUsersByIds(missingUserIds);
+        // Save users to cache
+        await dbOperations.saveUsers(newUsers);
+      }
+
+      // Sort messages by date (oldest first)
+      messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+      // Update store with new messages
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [channelId]: messages,
+        },
+        users: {
+          ...state.users,
+          ...Object.fromEntries(newUsers.map((u) => [u.id, u])),
+        },
+        isLoading: false,
+      }));
+
+      // Save messages to cache
+      await dbOperations.saveMessages(messages);
     }
   },
 
@@ -279,7 +369,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const prevIds = new Set(prevMessages.map((m) => m.id));
       const newMessages = recentMessages.filter((m) => !prevIds.has(m.id));
 
-      recentMessages.slice(0, 5).forEach((msg) => {
+      recentMessages.slice(0, 1).forEach((msg) => {
         const channel =
           state.channels[msg.channelId] || state.directChannels[msg.channelId];
         const author = state.users[msg.authorId];

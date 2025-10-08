@@ -292,6 +292,7 @@ class OdooAPI {
             "avatar_128",
             "is_member",
             "member_count",
+            "message_ids",
           ],
           limit: 100,
         },
@@ -311,6 +312,7 @@ class OdooAPI {
       isMember: channel.is_member,
       memberCount: channel.member_count,
       isArchived: !channel.active,
+      messageIds: channel.message_ids || [],
     }));
   }
 
@@ -340,6 +342,7 @@ class OdooAPI {
             "avatar_128",
             "is_member",
             "member_count",
+            "message_ids",
           ],
           limit: 100,
         },
@@ -381,6 +384,7 @@ class OdooAPI {
         isMember: channel.is_member,
         memberCount: channel.member_count,
         isArchived: !channel.active,
+        messageIds: channel.message_ids || [],
       };
     });
   }
@@ -416,6 +420,53 @@ class OdooAPI {
       createdAt: new Date(msg.date),
       isStarred: msg.starred_partner_ids.length > 0,
     }));
+  }
+
+  async getMessagesByIds(messageIds: number[]): Promise<Message[]> {
+    if (!this.client) throw new Error("Not authenticated");
+    if (!messageIds.length) return [];
+
+    try {
+      const response = await this.client.post("/web/dataset/call_kw", {
+        jsonrpc: "2.0",
+        method: "call",
+        params: {
+          model: "mail.message",
+          method: "read",
+          args: [messageIds],
+          kwargs: {
+            fields: [
+              "id",
+              "body",
+              "author_id",
+              "date",
+              "starred_partner_ids",
+              "res_id",
+              "model",
+            ],
+          },
+        },
+      });
+
+      if (response.data.error) {
+        throw new Error(
+          response.data.error.data.message || "Failed to fetch messages",
+        );
+      }
+
+      return response.data.result.map((msg: any) => ({
+        id: msg.id,
+        content: this.stripHtmlTags(msg.body || ""),
+        authorId: msg.author_id ? msg.author_id[0] : 0,
+        channelId: msg.res_id || 0,
+        createdAt: new Date(msg.date),
+        isStarred:
+          msg.starred_partner_ids && msg.starred_partner_ids.length > 0,
+      }));
+    } catch (error) {
+      console.error("Error fetching messages by IDs:", error);
+      throw error;
+    }
   }
 
   async sendMessage(channelId: number, content: string): Promise<Message> {

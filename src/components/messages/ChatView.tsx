@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { ArrowLeft, Hash, MoreVertical, Phone, Video } from 'lucide-react';
-import { Channel, User } from '../../types';
-import { useAppStore } from '../../store/app-store';
-import { useAuthStore } from '../../store/auth-store';
-import { MessageThread } from './MessageThread';
-import { MessageInput } from './MessageInput';
-import { Avatar } from '../ui/Avatar';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
+import React, { useEffect } from "react";
+import { ArrowLeft, Hash, MoreVertical, Phone, Video } from "lucide-react";
+import { Channel, User } from "../../types";
+import { useAppStore } from "../../store/app-store";
+import { useAuthStore } from "../../store/auth-store";
+import { MessageThread } from "./MessageThread";
+import { MessageInput } from "./MessageInput";
+import { Avatar } from "../ui/Avatar";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
 interface ChatViewProps {
   channel: Channel;
@@ -14,8 +14,9 @@ interface ChatViewProps {
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({ channel, onBack }) => {
-  const { messages, users, loadMessages, sendMessage, isLoading } = useAppStore();
-  const currentUser = useAuthStore(state => state.user);
+  const { messages, users, loadMessages, sendMessage, isLoading } =
+    useAppStore();
+  const currentUser = useAuthStore((state) => state.user);
 
   const channelMessages = messages[channel.id] || [];
 
@@ -28,10 +29,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ channel, onBack }) => {
   };
 
   const getDisplayInfo = () => {
-    if (channel.type === 'chat' && channel.otherUserId) {
+    if (channel.type === "chat" && channel.otherUserId) {
       const otherUser = users[channel.otherUserId];
       return {
-        name: otherUser?.name || 'Unknown User',
+        name: otherUser?.name || "Unknown User",
         avatar: otherUser?.avatar,
         isUser: true,
       };
@@ -71,7 +72,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ channel, onBack }) => {
             <h1 className="font-bold text-gray-900 text-base truncate">
               {displayInfo.name}
             </h1>
-            {channel.type === 'channel' && channel.memberIds && (
+            {channel.type === "channel" && channel.memberIds && (
               <p className="text-xs text-gray-500">
                 {channel.memberIds.length} members
               </p>

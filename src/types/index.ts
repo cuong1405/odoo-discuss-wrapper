@@ -16,6 +16,7 @@ export interface Message {
   parentId?: number;
   attachments?: Attachment[];
   reactions?: Reaction[];
+  messageIds?: number[];
 }
 
 export interface Channel {
@@ -30,6 +31,7 @@ export interface Channel {
   isArchived: boolean;
   unreadCount?: number;
   otherUserId?: number;
+  messageIds?: number[];
 }
 
 export interface Attachment {
@@ -72,4 +74,3 @@ export interface AppState {
 }
 
 export type NavigationTab = "inbox" | "channels" | "dms" | "activity";
-
