@@ -51,6 +51,7 @@ class OdooAPI {
           db: credentials.database,
           login: credentials.username,
           password: credentials.password,
+          context: {},
         },
       });
 
