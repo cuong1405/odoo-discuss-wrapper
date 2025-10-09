@@ -52,6 +52,8 @@ class OdooAPI {
         },
       });
 
+      console.log("Response headers:", response.headers);
+
       if (response.data.error) {
         throw new Error(
           response.data.error.data.message || "Authentication failed",
