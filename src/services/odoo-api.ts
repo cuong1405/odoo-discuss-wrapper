@@ -26,6 +26,7 @@ class OdooAPI {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        withCredentials: true,
       });
 
       // // Add request interceptor to handle CORS in production
@@ -52,7 +53,7 @@ class OdooAPI {
         },
       });
 
-      console.log("Response headers:", response.headers);
+      console.log("Response headers:", response.headers.getSetCookie());
 
       if (response.data.error) {
         throw new Error(
