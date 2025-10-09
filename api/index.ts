@@ -1,27 +1,40 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { withIronSessionApiRoute } from "iron-session/vercel";
+import { kv } from "@vercel/kv";
+import cookie from "cookie";
+import { randomBytes } from "crypto";
 import fetch, { Headers } from "node-fetch";
 
-// This is the core of the solution. We wrap our handler with iron-session.
-export default withIronSessionApiRoute(proxyHandler, {
-  cookieName: "odoo-proxy-session", // A new cookie your browser will store
-  password: process.env.SECRET_COOKIE_PASSWORD,
-  cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  },
-});
+const PROXY_SESSION_COOKIE = "proxy-session-id";
 
-async function proxyHandler(req: VercelRequest, res: VercelResponse) {
-  const targetUrl = req.headers["x-target-url"] as string;
-  if (!targetUrl) {
-    return res.status(400).send("X-Target-URL header is missing.");
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // 1. Get or create a unique session ID for the browser
+  const cookies = cookie.parse(req.headers.cookie || "");
+  let sessionId = cookies[PROXY_SESSION_COOKIE];
+
+  if (!sessionId) {
+    sessionId = randomBytes(16).toString("hex");
+    // Send this new session ID back to the browser in a secure cookie
+    res.setHeader(
+      "Set-Cookie",
+      cookie.serialize(PROXY_SESSION_COOKIE, sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      }),
+    );
   }
 
-  // The full path to the Odoo endpoint
-  const odooRequestUrl = `${targetUrl}${req.url.replace(/^\/api/, "")}`;
+  // 2. Prepare the request to forward to Odoo
+  const targetUrl = req.headers["x-target-url"] as string;
+  if (!targetUrl) {
+    return res.status(400).json({ error: "X-Target-URL header is required." });
+  }
 
-  // Prepare headers to forward to Odoo
+  const path = (req.query.path as string[]).join("/");
+  const odooRequestUrl = `${targetUrl}/${path}`;
+
   const fwdHeaders = new Headers();
   fwdHeaders.set("Content-Type", "application/json");
   fwdHeaders.set("Accept", "application/json");
@@ -29,30 +42,31 @@ async function proxyHandler(req: VercelRequest, res: VercelResponse) {
     fwdHeaders.set("X-Odoo-Database", req.headers["x-odoo-database"] as string);
   }
 
-  // **CRITICAL**: If we have a stored session_id, add it to the request to Odoo
-  if (req.session.odooSessionId) {
-    fwdHeaders.set("Cookie", `session_id=${req.session.odooSessionId}`);
+  // 3. CRITICAL: Retrieve the Odoo session_id from our KV store
+  const odooSessionId = await kv.get<string>(sessionId);
+  if (odooSessionId) {
+    fwdHeaders.set("Cookie", `session_id=${odooSessionId}`);
   }
 
   try {
+    // 4. Make the request to Odoo
     const odooResponse = await fetch(odooRequestUrl, {
       method: req.method,
       headers: fwdHeaders,
-      body: JSON.stringify(req.body),
+      body: req.body ? JSON.stringify(req.body) : null,
     });
 
-    // **CRITICAL**: Check if Odoo sent back a new session cookie
+    // 5. CRITICAL: Check if Odoo sent back a new session cookie
     const setCookieHeader = odooResponse.headers.get("set-cookie");
     if (setCookieHeader) {
-      const match = setCookieHeader.match(/session_id=([^;]+)/);
-      if (match) {
-        // We found a session_id. Encrypt and save it in our iron-session.
-        req.session.odooSessionId = match[1];
-        await req.session.save();
+      const newOdooSessionId = setCookieHeader.match(/session_id=([^;]+)/);
+      if (newOdooSessionId) {
+        // We found a new Odoo session_id. Store it in our KV database.
+        await kv.set(sessionId, newOdooSessionId[1], { ex: 60 * 60 * 24 * 7 }); // Expires in 1 week
       }
     }
 
-    // Forward Odoo's response back to the client
+    // 6. Forward Odoo's response back to the client
     res.status(odooResponse.status);
     const data = await odooResponse.json();
     res.json(data);

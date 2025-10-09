@@ -20,12 +20,15 @@ class OdooAPI {
 
       // Create temporary client for authentication
       const authClient = axios.create({
-        baseURL: this.serverUrl,
+        baseURL: "/api",
         timeout: 10000,
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "X-Target-URL": this.originalServerUrl,
+          "X-Odoo-Database": this.database,
         },
+        withCredentials: true,
       });
 
       // // Add request interceptor to handle CORS in production
@@ -72,7 +75,7 @@ class OdooAPI {
       secureStorage.setItem("database", this.database);
 
       // Initialize authenticated client
-      // this.initializeClient(token);
+      this.initializeClient(token);
 
       const userId = sessionInfo.uid;
       const user = await this.getCurrentUser(userId);
@@ -121,7 +124,7 @@ class OdooAPI {
     const isProduction = !import.meta.env.DEV;
 
     this.client = axios.create({
-      baseURL: this.serverUrl,
+      baseURL: "/api",
       timeout: 30000,
       headers: {
         "Content-Type": "application/json",
@@ -129,7 +132,7 @@ class OdooAPI {
         "X-Odoo-database": this.database,
         ...(isProduction && { "X-Target-URL": this.originalServerUrl }),
       },
-      withCredentials: false,
+      withCredentials: true,
     });
 
     // // Add request interceptor for CORS handling
