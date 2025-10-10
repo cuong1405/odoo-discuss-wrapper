@@ -53,7 +53,6 @@ class OdooAPI {
         },
       });
 
-      console.log("Response headers:", response.headers.getSetCookie());
 
       if (response.data.error) {
         throw new Error(
@@ -69,9 +68,7 @@ class OdooAPI {
 
       // Store authentication data
       const token = sessionInfo.session_id || "authenticated";
-      console.log("Value of token:", token);
       secureStorage.setItem("auth_token", token);
-      console.log("Cookies after login:", document.cookie);
       secureStorage.setItem("server_url", this.originalServerUrl);
       secureStorage.setItem("database", this.database);
 
