@@ -1,20 +1,18 @@
-import React, { useEffect } from "react";
-import { LoginForm } from "./components/auth/LoginForm";
-import { TopBar } from "./components/layout/TopBar";
-import { BottomNavigation } from "./components/layout/BottomNavigation";
-import { RecentMessagesList } from "./components/messages/RecentMessagesList";
-import { useAuthStore } from "./store/auth-store";
-import { useAppStore } from "./store/app-store";
-import { ChannelsTab } from "./components/layout/ChannelsTab";
-import { DirectMessagesTab } from "./components/layout/DirectMessagesTab";
-import { SseListener } from "./components/SseListener";
+import React, { useEffect } from 'react';
+import { LoginForm } from './components/auth/LoginForm';
+import { TopBar } from './components/layout/TopBar';
+import { BottomNavigation } from './components/layout/BottomNavigation';
+import { RecentMessagesList } from './components/messages/RecentMessagesList';
+import { useAuthStore } from './store/auth-store';
+import { useAppStore } from './store/app-store';
+import { ChannelsTab } from './components/layout/ChannelsTab';
+import { DirectMessagesTab } from './components/layout/DirectMessagesTab';
 
 function App() {
   const { isAuthenticated, restoreSession } = useAuthStore();
-  const { currentTab, setCurrentTab, loadRecentMessages, currentChannelId } =
-    useAppStore();
-  const loadChannels = useAppStore((state) => state.loadChannels);
-  const loadDirectChannels = useAppStore((state) => state.loadDirectChannels);
+  const { currentTab, setCurrentTab, loadRecentMessages, currentChannelId } = useAppStore();
+  const loadChannels = useAppStore(state => state.loadChannels);
+  const loadDirectChannels = useAppStore(state => state.loadDirectChannels);
 
   useEffect(() => {
     // Try to restore previous session on app start
@@ -47,18 +45,18 @@ function App() {
     const handleOnline = () => useAppStore.getState().setOfflineStatus(false);
     const handleOffline = () => useAppStore.getState().setOfflineStatus(true);
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
   useEffect(() => {
     // Request notification permission on app start
-    if (Notification.permission === "default") {
+    if (Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
@@ -73,13 +71,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SseListener />
       {/* Top Navigation Bar - Hidden when in chat view */}
       {!isInChatView && <TopBar />}
 
       {/* Main Content Area */}
-      <div className={isInChatView ? "" : "pt-[140px] pb-16"}>
-        {currentTab === "inbox" && (
+      <div className={isInChatView ? '' : 'pt-[140px] pb-16'}>
+        {currentTab === 'inbox' && (
           <div className="p-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Inbox</h1>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
@@ -89,16 +86,19 @@ function App() {
           </div>
         )}
 
-        {currentTab === "channels" && <ChannelsTab />}
+        {currentTab === 'channels' && <ChannelsTab />}
 
-        {currentTab === "dms" && <DirectMessagesTab />}
+        {currentTab === 'dms' && <DirectMessagesTab />}
 
-        {currentTab === "activity" && <RecentMessagesList />}
+        {currentTab === 'activity' && <RecentMessagesList />}
       </div>
 
       {/* Bottom Navigation - Hidden when in chat view */}
       {!isInChatView && (
-        <BottomNavigation currentTab={currentTab} onTabChange={setCurrentTab} />
+        <BottomNavigation
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+        />
       )}
     </div>
   );

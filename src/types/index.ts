@@ -12,7 +12,7 @@ export interface Message {
   authorId: number;
   channelId: number;
   createdAt: Date;
-  isStarred?: boolean;
+  isStarred: boolean;
   parentId?: number;
   attachments?: Attachment[];
   reactions?: Reaction[];
