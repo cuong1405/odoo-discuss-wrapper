@@ -469,17 +469,15 @@ if (typeof window !== "undefined") {
       const data = JSON.parse(event.data);
       console.log("New message received from Odoo webhook:", data);
 
-      const { messages, set } = useAppStore.getState();
-
-      // Get existing messages from channel
-      const channelMessages = messages[data.channelId] || [];
-
       //Add new message to the channel
-      set({
-        messages: {
-          ...messages,
-          [data.channelId]: [...channelMessages, data],
-        },
+      useAppStore.setState((state) => {
+        const channelMessages = state.messages[data.channelId] || [];
+        return {
+          messages: {
+            ...state.messages,
+            [data.channelId]: [...channelMessages, data],
+          },
+        };
       });
     } catch (err) {
       console.error("Error parsing SSE messae:", err);
