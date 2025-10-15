@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const newMessage = {
         id: data._id,
         content: data.body || "",
-        authorId: data.author_id?.[0] || "Unknown",
+        authorId: data.author_id || "Unknown",
         channelId: data.res_id,
         createdAt: new Date(data.date),
       };
