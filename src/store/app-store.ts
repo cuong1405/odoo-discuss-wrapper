@@ -459,38 +459,3 @@ export const useAppStore = create<AppStore>((set, get) => ({
     );
   },
 }));
-
-console.log("useAppStore.setState =", typeof useAppStore.setState);
-// SSE listener for live Odoo notifications
-if (typeof window !== "undefined") {
-  const eventSource = new EventSource("/api/odoo-webhook");
-
-  eventSource.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("New message received from Odoo webhook:", data);
-
-      useAppStore.setState((state) => {
-        const channelId = data.res_id;
-        const channelMessages = state.messages[channelId] || [];
-
-        const newMessage = {
-          id: data._id,
-          content: data.body || "",
-          authorId: data.author_id || "Unknown",
-          channelId,
-          createdAt: new Date(data.date),
-        };
-
-        return {
-          messages: {
-            ...state.messages,
-            [channelId]: [...channelMessages, newMessage],
-          },
-        };
-      });
-    } catch (err) {
-      console.error("Error parsing SSE message:", err);
-    }
-  };
-}
