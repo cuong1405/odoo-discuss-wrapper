@@ -488,7 +488,7 @@ if (typeof window !== "undefined") {
       set({
         messages: {
           ...messages,
-          [newMessage.channelId]: [...channelMessages, data],
+          [newMessage.channelId]: [...channelMessages, newMessage],
         },
       });
     } catch (err) {
