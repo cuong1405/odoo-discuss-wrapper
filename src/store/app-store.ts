@@ -483,7 +483,7 @@ if (typeof window !== "undefined") {
       const channelMessages = messages[newMessage.channelId] || [];
 
       // Debug: ensure channelMessage is an array
-      console.log("Channel messages:", channelMessages);
+      console.log("New message object:", newMessage);
 
       //Add new message to the channel
       useAppStore.setState({
