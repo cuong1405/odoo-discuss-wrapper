@@ -460,6 +460,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 }));
 
+console.log("useAppStore.setState =", typeof useAppStore.setState);
 // SSE listener for live Odoo notifications
 if (typeof window !== "undefined") {
   const eventSource = new EventSource("/api/odoo-webhook");
