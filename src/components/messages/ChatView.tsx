@@ -14,12 +14,15 @@ interface ChatViewProps {
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({ channel, onBack }) => {
-  const { messages, users, loadMessages, sendMessage, isLoading } =
-    useAppStore();
+  const channelMessages = useAppStore(
+    (state) => state.messages[channel.id] || [],
+  );
+  const users = useAppStore((state) => state.users);
+  const loadMessages = useAppStore((state) => state.loadMessages);
+  const sendMessage = useAppStore((state) => state.sendMessage);
+  const isLoading = useAppStore((state) => state.isLoading);
+
   const currentUser = useAuthStore((state) => state.user);
-
-  const channelMessages = messages[channel.id] || [];
-
   useEffect(() => {
     loadMessages(channel.id);
   }, [channel.id, loadMessages]);
