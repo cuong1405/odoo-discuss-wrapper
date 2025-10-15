@@ -487,5 +487,9 @@ if (typeof window !== "undefined") {
 
   eventSource.onerror = (err) => {
     console.error("SSE connection error:", err);
+
+    eventSource.onopen = () => {
+      console.log("SSE connection established");
+    };
   };
 }
