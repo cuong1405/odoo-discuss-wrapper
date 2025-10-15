@@ -472,11 +472,8 @@ if (typeof window !== "undefined") {
       const { messages } = useAppStore.getState();
 
       const newMessage = {
-        id: data._id,
-        content: data.body || "",
-        authorId: data.author_id || "Unknown",
-        channelId: data.res_id,
-        createdAt: new Date(data.date),
+        ...data,
+        createdAt: new Date(data.createdAt),
       };
 
       // Get existing messages from channel
