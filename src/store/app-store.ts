@@ -492,6 +492,7 @@ if (typeof window !== "undefined") {
           [newMessage.channelId]: [...channelMessages, newMessage],
         },
       });
+      console.log("Updated store messages:", useAppStore.getState().messages);
     } catch (err) {
       console.error("Error parsing SSE message:", err);
     }

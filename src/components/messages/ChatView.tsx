@@ -19,6 +19,7 @@ export const ChatView: React.FC<ChatViewProps> = ({ channel, onBack }) => {
   const currentUser = useAuthStore((state) => state.user);
 
   const channelMessages = messages[channel.id] || [];
+  console.log("Current channel:", channel.id);
 
   useEffect(() => {
     loadMessages(channel.id);
