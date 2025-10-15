@@ -471,14 +471,20 @@ if (typeof window !== "undefined") {
 
       const { messages, set } = useAppStore.getState();
 
+      // Format createdAt with Date object
+      const newMessage = {
+        ...data,
+        createdAt: new Date(data.createdAt),
+      };
+
       // Get existing messages from channel
-      const channelMessages = messages[data.channelId] || [];
+      const channelMessages = messages[newMessage.channelId] || [];
 
       //Add new message to the channel
       set({
         messages: {
           ...messages,
-          [data.channelId]: [...channelMessages, data],
+          [newMessage.channelId]: [...channelMessages, newMessage],
         },
       });
     } catch (err) {
