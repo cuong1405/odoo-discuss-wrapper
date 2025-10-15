@@ -469,9 +469,16 @@ if (typeof window !== "undefined") {
       const data = JSON.parse(event.data);
       console.log("New message received from Odoo webhook:", data);
 
+      // Debug: Check the value of getState()
+      const stateSnapshot = useAppStore.getState();
+      console.log("useAppStore.getState() snapshot:", stateSnapshot);
+
       const { messages, set } = useAppStore.getState();
 
-      // Format createdAt with Date object
+      // Debug: Veriry 'set' type
+      console.log("typeof set:", typeof set);
+      console.log("is set a function?", typeof set === "function");
+      console.log("set reference:", set);
 
       const newMessage = {
         id: data._id,
@@ -483,6 +490,9 @@ if (typeof window !== "undefined") {
 
       // Get existing messages from channel
       const channelMessages = messages[newMessage.channelId] || [];
+
+      // Debug: ensure channelMessage is an array
+      console.log("Channel messages:", channelMessages);
 
       //Add new message to the channel
       set({
