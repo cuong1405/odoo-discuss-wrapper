@@ -26,20 +26,21 @@ class OdooAPI {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
+        withCredentials: true,
       });
 
-      // Add request interceptor to handle CORS in production
-      authClient.interceptors.request.use((config) => {
-        // In production, we might need to handle CORS differently
-        if (!import.meta.env.DEV) {
-          config.headers["Access-Control-Allow-Origin"] = "*";
-          config.headers["Access-Control-Allow-Methods"] =
-            "GET, POST, PUT, DELETE, OPTIONS";
-          config.headers["Access-Control-Allow-Headers"] =
-            "Content-Type, Authorization, Cookie";
-        }
-        return config;
-      });
+      // // Add request interceptor to handle CORS in production
+      // authClient.interceptors.request.use((config) => {
+      //   // In production, we might need to handle CORS differently
+      //   if (!import.meta.env.DEV) {
+      //     config.headers["Access-Control-Allow-Origin"] = "*";
+      //     config.headers["Access-Control-Allow-Methods"] =
+      //       "GET, POST, PUT, DELETE, OPTIONS";
+      //     config.headers["Access-Control-Allow-Headers"] =
+      //       "Content-Type, Authorization, Cookie";
+      //   }
+      //   return config;
+      // });
       // Authenticate with Odoo
       const response = await authClient.post("/web/session/authenticate", {
         jsonrpc: "2.0",
@@ -48,6 +49,7 @@ class OdooAPI {
           db: credentials.database,
           login: credentials.username,
           password: credentials.password,
+          context: {},
         },
       });
 
@@ -65,9 +67,7 @@ class OdooAPI {
 
       // Store authentication data
       const token = sessionInfo.session_id || "authenticated";
-      console.log("Value of token:", token);
       secureStorage.setItem("auth_token", token);
-      console.log("Cookies after login:", document.cookie);
       secureStorage.setItem("server_url", this.originalServerUrl);
       secureStorage.setItem("database", this.database);
 
@@ -124,22 +124,23 @@ class OdooAPI {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "X-Odoo-database": this.database,
       },
       withCredentials: true,
     });
 
-    // Add request interceptor for CORS handling
-    this.client.interceptors.request.use((config) => {
-      // In production, we might need to handle CORS differently
-      if (!import.meta.env.DEV) {
-        config.headers["Access-Control-Allow-Origin"] = "*";
-        config.headers["Access-Control-Allow-Methods"] =
-          "GET, POST, PUT, DELETE, OPTIONS";
-        config.headers["Access-Control-Allow-Headers"] =
-          "Content-Type, Authorization, Cookie";
-      }
-      return config;
-    });
+    // // Add request interceptor for CORS handling
+    // this.client.interceptors.request.use((config) => {
+    //   // In production, we might need to handle CORS differently
+    //   if (!import.meta.env.DEV) {
+    //     config.headers["Access-Control-Allow-Origin"] = "*";
+    //     config.headers["Access-Control-Allow-Methods"] =
+    //       "GET, POST, PUT, DELETE, OPTIONS";
+    //     config.headers["Access-Control-Allow-Headers"] =
+    //       "Content-Type, Authorization, Cookie";
+    //   }
+    //   return config;
+    // });
 
     // Add response interceptor for token refresh
     this.client.interceptors.response.use(
@@ -195,6 +196,15 @@ class OdooAPI {
   }
 
   private async getCurrentUser(userId: number): Promise<User> {
+    if (!this.client) {
+      const token = secureStorage.getItem("auth_token");
+      if (token) {
+        this.initializeClient(token);
+      } else {
+        throw new Error("Authentication token not found.");
+      }
+    }
+
     if (!this.client) throw new Error("Not authenticated");
 
     try {
@@ -635,7 +645,7 @@ class OdooAPI {
     secureStorage.removeItem("server_url");
     secureStorage.removeItem("database");
     this.client = null;
-    this.serverUrl = null;
+    this.serverUrl = "";
     this.database = null;
   }
 }
