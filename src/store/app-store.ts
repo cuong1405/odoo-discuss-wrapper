@@ -472,9 +472,13 @@ if (typeof window !== "undefined") {
       const { messages, set } = useAppStore.getState();
 
       // Format createdAt with Date object
+
       const newMessage = {
-        ...data,
-        createdAt: new Date(data.createdAt),
+        id: data._id,
+        content: data.body || "",
+        authorId: data.author_id || "Unknown",
+        channelId: data.res_id,
+        createdAt: new Date(data.date),
       };
 
       // Get existing messages from channel
@@ -484,7 +488,7 @@ if (typeof window !== "undefined") {
       set({
         messages: {
           ...messages,
-          [newMessage.channelId]: [...channelMessages, newMessage],
+          [newMessage.channelId]: [...channelMessages, data],
         },
       });
     } catch (err) {
